@@ -88,7 +88,7 @@ public final class GRootController {
     
     public void stopAnimator() {
         synchronized(this) {
-            if(mAnimator != null)
+            if(mAnimator == null)
                 return;
             
             mAnimator.stopAnimator();
