@@ -14,6 +14,7 @@ DEPENDENCIES:
 
 
 KNOWN ISSUES:
+Components without MouseListeners should not receive mouse focus.
 
 
 MAINTAINED BY:

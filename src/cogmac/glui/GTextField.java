@@ -18,40 +18,44 @@ public class GTextField extends GPanel {
     private String mDrawText;
 
     private boolean mHasFocus = false;
-
-
-    public GTextField(int maxLength) {
-        this(maxLength, "");
+    
+    
+    public GTextField( int maxLength ) {
+        this( maxLength, "" );
     }
-
-
-    public GTextField(int maxLength, String text) {
+    
+    
+    public GTextField( int maxLength, String text ) {
         mMaxLength = maxLength;
         mText      = new StringBuilder(text);
         mDrawText  = text;
-        setFocusable(true);
-
-        addFocusListener(new GFocusListener() {
-
-            public void focusGained(GFocusEvent e) {
+        
+        addFocusListener( new GFocusListener() {
+            
+            public void focusGained( GFocusEvent e ) {
                 mHasFocus = true;
             }
 
-            public void focusLost(GFocusEvent e) {
+            public void focusLost( GFocusEvent e ) {
                 mHasFocus = false;
             }
 
         });
+
+        addKeyListener( new KeyHandler() );
+        
+        addMouseListener( new MouseHandler() );
+        
     }
 
 
     
-    public GTextField text(String text) {
-        mText.setLength(0);
-        mText.append(text);
+    public GTextField text( String text ) {
+        mText.setLength( 0 );
+        mText.append( text );
         
-        if(mText.length() > mMaxLength) {
-            mText.setLength(mMaxLength);
+        if( mText.length() > mMaxLength ) {
+            mText.setLength( mMaxLength );
         }
         
         mDrawText = text;
@@ -65,86 +69,96 @@ public class GTextField extends GPanel {
 
     
     @Override
-    public void paint(GGraphics g) {
+    public void paint( GGraphics g ) {
         GL gl = g.gl();
         final int w = width();
         final int h = height();
 
         GColor background = background();
         
-        if(background != null) {
-            background.apply(gl);
-            gl.glBegin(GL_QUADS);
-            gl.glVertex2i(0, 0);
-            gl.glVertex2i(w, 0);
-            gl.glVertex2i(w, h);
-            gl.glVertex2i(0, h);
+        if( background != null ) {
+            background.apply( gl );
+            gl.glBegin( GL_QUADS );
+            gl.glVertex2i( 0, 0 );
+            gl.glVertex2i( w, 0 );
+            gl.glVertex2i( w, h );
+            gl.glVertex2i( 0, h );
             gl.glEnd();
         }
 
         GColor foreground = foreground();
-        foreground.apply(gl);
-        FontTexture font = g.fontManager().getFontTexture(font(), GLContext.getCurrent());
+        foreground.apply( gl );
+        FontTexture font = g.fontManager().getFontTexture( font(), GLContext.getCurrent() );
 
-        gl.glMatrixMode(GL_MODELVIEW);
+        gl.glMatrixMode( GL_MODELVIEW );
         gl.glPushMatrix();
-        gl.glTranslated(font.getHeight() * 0.1, (h - font.getAscent() + font.getDescent()) / 2.0,0);
-        font.push(gl);
-        font.renderChars(gl, mDrawText);
+        gl.glTranslated( font.getHeight() * 0.1, (h - font.getAscent() + font.getDescent()) / 2.0, 0 );
+        font.push( gl );
+        font.renderChars( gl, mDrawText );
 
         int tw;
 
-        if(mDrawText.length() >= mMaxLength) {
-            tw = (int)font.getCharsWidth(mDrawText.toCharArray(), 0, mMaxLength - 1);
+        if( mDrawText.length() >= mMaxLength ) {
+            tw = (int)font.getCharsWidth( mDrawText.toCharArray(), 0, mMaxLength - 1 );
         }else{
-            tw = (int)font.getCharsWidth(mDrawText);
+            tw = (int)font.getCharsWidth( mDrawText );
         }
 
-        font.pop(gl);
+        font.pop( gl );
         gl.glPopMatrix();
         
-        if(mHasFocus) {
-            gl.glColor4f(foreground.r(), foreground.g(), foreground.b(), 0.3f);
-            gl.glBegin(GL_QUADS);
-            gl.glVertex2i(tw + 5, 3);
-            gl.glVertex2i(tw + 10, 3);
-            gl.glVertex2i(tw + 10, h - 3);
-            gl.glVertex2i(tw + 5, h - 3);
+        if( mHasFocus ) {
+            gl.glColor4f( foreground.r(), foreground.g(), foreground.b(), 0.3f );
+            gl.glBegin( GL_QUADS );
+            gl.glVertex2i( tw + 5, 3 );
+            gl.glVertex2i( tw + 10, 3 );
+            gl.glVertex2i( tw + 10, h - 3 );
+            gl.glVertex2i( tw + 5, h - 3 );
             gl.glEnd();
         }
 
-        foreground.apply(gl);
-        gl.glLineWidth(1f);
-        gl.glBegin(GL_LINE_LOOP);
-        gl.glVertex2i(1, 1);
-        gl.glVertex2i(w, 1);
-        gl.glVertex2i(w, h);
-        gl.glVertex2i(1, h);
+        foreground.apply( gl );
+        gl.glLineWidth( 1f );
+        gl.glBegin( GL_LINE_LOOP );
+        gl.glVertex2i( 1, 1 );
+        gl.glVertex2i( w, 1 );
+        gl.glVertex2i( w, h );
+        gl.glVertex2i( 1, h );
         gl.glEnd();
     }
     
     
-    @Override
-    public void processKeyEvent(GKeyEvent e) {
-        super.processKeyEvent(e);
+    private final class KeyHandler extends GKeyAdapter {
         
-        if(e.id() == GKeyEvent.KEY_TYPED) {
-            char c = e.getKeyChar();
+        @Override
+        public void keyTyped( GKeyEvent e ) {
+            if( e.id() == GKeyEvent.KEY_TYPED ) {
+                char c = e.getKeyChar();
 
-            if(c >= ' ' && c <= '~') {
-                if(mText.length() >= mMaxLength) {
-                    mText.setLength(mMaxLength - 1);
+                if( c >= ' ' && c <= '~' ) {
+                    if( mText.length() >= mMaxLength ) {
+                        mText.setLength( mMaxLength - 1 );
+                    }
+
+                    mText.append( c );
+                    mDrawText = mText.toString();
+                }else if( c == 8 ) {
+                    mText.setLength( Math.max( 0, mText.length() - 1 ) );
+                    mDrawText = mText.toString();
                 }
-
-                mText.append(c);
-                mDrawText = mText.toString();
-            }else if(c == 8) {
-                mText.setLength(Math.max(0, mText.length() - 1));
-                mDrawText = mText.toString();
             }
+            
+            e.consume();
         }
+        
+    }
 
-        e.consume();
+    
+    private final class MouseHandler extends GMouseAdapter {
+        @Override
+        public void mousePressed( GMouseEvent e ) {
+            requestFocus();
+        }
     }
     
 }

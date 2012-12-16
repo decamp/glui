@@ -5,8 +5,13 @@ package cogmac.glui;
  */
 public class GToolkit {
     
-    public static boolean isFocusable(GComponent comp) {
-        return comp.isFocusable() && comp.isEnabled() && comp.isVisible();
+    public static boolean isKeyboardFocusable(GComponent comp) {
+        return comp.hasKeyboardListener() && comp.isEnabled() && comp.isVisible();
     }
+    
+    public static boolean isMouseFocusable( GComponent comp ) {
+        return comp.hasMouseListener() && comp.isEnabled() && comp.isVisible();
+    }
+    
 
 }

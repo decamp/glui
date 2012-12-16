@@ -1,18 +1,15 @@
 package cogmac.glui.event;
 
+import java.awt.*;
+import java.awt.event.*;
 import java.util.Random;
+import javax.swing.*;
 
-import javax.media.opengl.GL;
-import javax.swing.JFrame;
-
-import static javax.media.opengl.GL.*;
-
-import cogmac.glui.*;
 
 /**
  * @author decamp
  */
-public class TestFocus {
+public class TestFocusAwt {
 
     
     private static Random RAND = new Random();
@@ -25,29 +22,25 @@ public class TestFocus {
     
     private static void test() {
         
-        GRootController cont = GRootController.newInstance();
-        
         JFrame frame = new JFrame();
-        frame.setSize(1024, 1024 + 30);
+        frame.setSize( 1024, 1024 + 30 );
         frame.setLocationRelativeTo(null);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.add(cont.component());
-        
+        frame.setLayout( null );
         frame.setVisible(true);
+        
         
         int w = frame.getContentPane().getWidth();
         int h = frame.getContentPane().getHeight();
         
-        cont.rootPane().addChild(newPanel(0, 0, w, h, 3, 3, 3, new int[]{0}));
-        cont.startAnimator(40.0);
-        
+        frame.setContentPane( newPanel( 0, 0, w, h, 3, 3, 3, new int[]{0} ) );
     }
     
     
     
-    private static Panel newPanel(int x, int y, int w, int h, int rows, int cols, int depth, int[] index) {
-        Panel p = new Panel(index[0]++);
-        p.bounds(x, y, w, h);
+    private static Panel newPanel( int x, int y, int w, int h, int rows, int cols, int depth, int[] index ) {
+        Panel p = new Panel( index[0]++ );
+        p.setBounds( x, y, w, h );
         
         if(depth == 1)
             return p;
@@ -61,7 +54,7 @@ public class TestFocus {
                 int y0 = (h - margin) * row / rows + margin * 2;
                 int y1 = (h - margin) * (row + 1) / rows - margin; 
                 
-                p.addChild(newPanel(x0, y0, x1 - x0, y1 - y0, rows, cols, depth - 1, index));
+                p.add(newPanel(x0, y0, x1 - x0, y1 - y0, rows, cols, depth - 1, index));
             }
         }
         
@@ -69,7 +62,8 @@ public class TestFocus {
     }
     
     
-    private static class Panel extends GPanel implements GMouseListener, GFocusListener, GKeyListener {
+    
+    private static class Panel extends JPanel implements MouseListener, FocusListener, KeyListener {
     
         private final int mIndex;
         private boolean mHasFocus  = false;
@@ -79,113 +73,105 @@ public class TestFocus {
         
         
         public Panel( int index ) {
+            setLayout( null );
+            
             mIndex = index;
+            
             addMouseListener( this );
             addFocusListener( this );
             addKeyListener( this );
+            
+            setFocusable( true );
+            setOpaque( false );
         }
 
         
         
         @Override
-        public void paintComponent(GGraphics gr) {
-            GL gl = gr.gl();
+        public void paintComponent( Graphics gg ) {
             
             float r = mMouse3Down ? 1 : 0;
             float g = mHasMouse  ? 1 : 0;
             float b = mMouseDown ? 1 : 0;
             
-            gl.glColor3f(r, g, b);
-            gl.glBegin(GL_QUADS);
-            gl.glVertex2i(0, 0);
-            gl.glVertex2i(width(), 0);
-            gl.glVertex2i(width(), height());
-            gl.glVertex2i(0, height());
-            gl.glEnd();
-            
+            Graphics2D gl = (Graphics2D)gg;
+            gl.setColor( new Color( r, g, b ) );
+            gl.fillRect( 0, 0, getWidth() - 1, getHeight() - 1 );
+                        
             if(!mHasFocus) {
-                gl.glColor3f(0.5f, 0.5f, 0.5f);
-                gl.glLineWidth(1f);
+                gl.setColor( Color.GRAY );
+                gl.setStroke( new BasicStroke( 1f ) );
             }else{
-                gl.glColor3f(1, 1, 1);
-                gl.glLineWidth(2f);
+                gl.setColor( Color.WHITE );
+                gl.setStroke( new BasicStroke( 2f ) );
             }
             
-            gl.glBegin(GL_LINE_LOOP);
-            gl.glVertex2i(0, 0);
-            gl.glVertex2i(width(), 0);
-            gl.glVertex2i(width(), height());
-            gl.glVertex2i(0, height());
-            gl.glEnd();
+            gl.drawRect( 0, 0, getWidth() - 1, getHeight() - 1 );
         }
-        
-        
-        public void mouseEntered(GMouseEvent e) {
+
+
+        public void mouseEntered(MouseEvent e) {
             mHasMouse = true;
+            repaint();
         }
 
 
-        public void mouseExited(GMouseEvent e) {
+        public void mouseExited(MouseEvent e) {
             mHasMouse = false;
+            repaint();
         }
 
 
-        public void mousePressed(GMouseEvent e) {
+        public void mousePressed(MouseEvent e) {
             if(e.getButton() == 1) {
                 mMouseDown = true;
                 
             }else if(e.getButton() == 3) {
                 mMouse3Down = true;
-                
-                
-            
-            } else if( e.getButton() == 2 ) { 
-                if((e.getModifiers() & GMouseEvent.META_DOWN_MASK) == 0) {
-                    startModal();
-                }else{
-                    System.out.println( "Stop modal" );
-                    stopModal();
-                }
             }
-
+        
             requestFocus();
-            
+            repaint();
         }
 
 
-        public void mouseReleased(GMouseEvent e) {
+        public void mouseReleased(MouseEvent e) {
             if(e.getButton() == 1) {
                 mMouseDown = false;
             } else if( e.getButton() == 3 ) {
                 mMouse3Down = false;
             }
+            
+            repaint();
         }
 
 
-        public void mouseClicked(GMouseEvent e) {}
+        public void mouseClicked(MouseEvent e) {}
 
 
-        public void focusGained(GFocusEvent e) {
+        public void focusGained(FocusEvent e) {
             mHasFocus = true;
+            repaint();
         }
 
 
-        public void focusLost(GFocusEvent e) {
+        public void focusLost(FocusEvent e) {
             mHasFocus = false;
+            repaint();
         }
 
 
-        public void keyPressed(GKeyEvent e) {
+        public void keyPressed(KeyEvent e) {
             System.out.println(mIndex + " pressed " + e.getKeyChar() + "\t" + e.getKeyCode());
         }
 
 
-        public void keyReleased(GKeyEvent e) {
+        public void keyReleased(KeyEvent e) {
             System.out.println(mIndex + " released " + e.getKeyChar() + "\t" + e.getKeyCode());
         }
 
 
-        public void keyTyped(GKeyEvent e) {
+        public void keyTyped(KeyEvent e) {
             System.out.println(mIndex + " typed " + e.getKeyChar() + "\t" + e.getKeyCode());
         }
 

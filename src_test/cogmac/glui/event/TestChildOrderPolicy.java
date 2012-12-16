@@ -38,13 +38,12 @@ public class TestChildOrderPolicy {
     
     
     
-    
     private Panel constructTree(int depth, int branches, int[] index) {
         if(depth == 0)
             return null;
         
-        Panel ret = new Panel(index[0]++);
-        ret.setFocusable(true);
+        Panel ret = new Panel( index[0]++ );
+        ret.addKeyListener( new GKeyAdapter() );
         
         if(depth == 1)
             return ret;
@@ -57,7 +56,6 @@ public class TestChildOrderPolicy {
     }
     
     
-
     private static class Panel extends GPanel {
         
         final int mIndex;
