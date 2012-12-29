@@ -9,13 +9,21 @@ import cogmac.glui.event.*;
 /**
  * @author decamp
  */
-public class GInputDispatcher {
+class EventProcessor {
 
+    
     private static final int ALL_BUTTON_MASK = MouseEvent.BUTTON1_DOWN_MASK |
                                                MouseEvent.BUTTON2_DOWN_MASK |
                                                MouseEvent.BUTTON3_DOWN_MASK;
     
-    
+    private static final int[] BUTTON_MASKS = { GMouseEvent.BUTTON1_DOWN_MASK,
+                                                GMouseEvent.BUTTON2_DOWN_MASK,
+                                                GMouseEvent.BUTTON3_DOWN_MASK };
+
+    private static final int[] BUTTON_IDS = { GMouseEvent.BUTTON1,
+                                              GMouseEvent.BUTTON2,
+                                              GMouseEvent.BUTTON3 };
+
     private final Component  mAwtOwner;
     private final GComponent mOwner;
     
@@ -34,14 +42,13 @@ public class GInputDispatcher {
     
     private GFocusTraversalPolicy mFocusPolicy = new GChildOrderTraversalPolicy();
 
-
-
-    public GInputDispatcher( Component awtOwner, GComponent owner ) {
-        mAwtOwner = awtOwner;
-        mOwner = owner;
+    
+    
+    EventProcessor( Component awtOwner, GComponent owner ) {
+        mAwtOwner  = awtOwner;
+        mOwner     = owner;
         mInputRoot = owner;
     }
-    
     
     
     public void validate() {
@@ -49,10 +56,9 @@ public class GInputDispatcher {
         validateFocus( mOwner, false );
         validateMouse();
     }
+    
 
-
-
-    public void translateMousePressedEvent( MouseEvent e, int ex, int ey ) {
+    public void processMousePressedEvent( MouseEvent e, int ex, int ey ) {
         cache( e, ex, ey );
 
         if( mMouseButtonFocus == null ) {
@@ -69,7 +75,7 @@ public class GInputDispatcher {
     }
     
     
-    public void translateMouseReleasedEvent( MouseEvent e, int ex, int ey ) {
+    public void processMouseReleasedEvent( MouseEvent e, int ex, int ey ) {
         cache( e, ex, ey );
         
         if( mMouseButtonFocus != null ) {
@@ -83,7 +89,7 @@ public class GInputDispatcher {
     }
 
 
-    public void translateMouseClickedEvent( MouseEvent e, int ex, int ey ) {
+    public void processMouseClickedEvent( MouseEvent e, int ex, int ey ) {
         cache( e, ex, ey );
 
         if( mMouseClickFocus != null ) {
@@ -92,19 +98,19 @@ public class GInputDispatcher {
     }
 
 
-    public void translateMouseEnteredEvent( MouseEvent e, int ex, int ey ) {
+    public void processMouseEnteredEvent( MouseEvent e, int ex, int ey ) {
         cache( e, ex, ey );
         updateMouseLocation( e );
     }
     
     
-    public void translateMouseExitedEvent( MouseEvent e, int ex, int ey ) {
+    public void processMouseExitedEvent( MouseEvent e, int ex, int ey ) {
         cache( e, ex, ey );
         setMouseLocationComponent( e, null );
     }
     
     
-    public void translateMouseMovedEvent( MouseEvent e, int ex, int ey ) {
+    public void processMouseMovedEvent( MouseEvent e, int ex, int ey ) {
         cache( e, ex, ey );
 
         if( updateMouseLocation( e ) ) {
@@ -113,7 +119,7 @@ public class GInputDispatcher {
     }
 
 
-    public void translateMouseDraggedEvent( MouseEvent e, int ex, int ey ) {
+    public void processMouseDraggedEvent( MouseEvent e, int ex, int ey ) {
         cache( e, ex, ey );
 
         updateMouseLocation( e );
@@ -124,7 +130,7 @@ public class GInputDispatcher {
     }
 
 
-    public void translateMouseWheelMovedEvent( MouseWheelEvent e, int ex, int ey ) {
+    public void processMouseWheelMovedEvent( MouseWheelEvent e, int ex, int ey ) {
         cache( e, ex, ey );
 
         if( mMouseLocation != null ) {
@@ -133,7 +139,15 @@ public class GInputDispatcher {
     }
 
 
-    public void translateKeyPressedEvent( KeyEvent e ) {
+    public void processKeyPressedEvent( KeyEvent e ) {
+        GComponent focus = mFocus;
+        if( focus != null ) {
+            resendKey( e, -1, focus );
+        }
+    }
+    
+    
+    public void processKeyReleasedEvent( KeyEvent e ) {
         GComponent focus = mFocus;
         if( focus != null ) {
             resendKey( e, -1, focus );
@@ -141,7 +155,7 @@ public class GInputDispatcher {
     }
 
 
-    public void translateKeyReleasedEvent( KeyEvent e ) {
+    public void processKeyTypedEvent( KeyEvent e ) {
         GComponent focus = mFocus;
         if( focus != null ) {
             resendKey( e, -1, focus );
@@ -149,52 +163,36 @@ public class GInputDispatcher {
     }
 
 
-    public void translateKeyTypedEvent( KeyEvent e ) {
-        GComponent focus = mFocus;
-        if( focus != null ) {
-            resendKey( e, -1, focus );
+    
+    public void processPaint( GComponent source ) {
+        if( mAwtOwner != null ) {
+            mAwtOwner.repaint();
         }
     }
-
-
-
-    public void processFocusRequest( GComponent source ) {
+    
+    
+    public void processLayout( GComponent source ) {
+        source.processLayout();
+    }
+    
+    
+    public void processRequestFocus( GComponent source ) {
         GComponent focus = mFocus;
 
         if( mAwtOwner != null && !mAwtOwner.hasFocus() ) {
             mAwtOwner.requestFocus();
         }
 
-        if( focus == source )
+        if( focus == source ) {
             return;
+        }
 
-        if( source == null || isChild( mInputRoot, source ) )
+        if( source == null || isChild( mInputRoot, source ) ) {
             changeFocus( source, source, false );
-    }
-
-
-    public void processRepaintRequest( GComponent source ) {
-        if( mAwtOwner != null ) {
-            mAwtOwner.repaint();
         }
     }
-
-
-    public void processTransferFocusForward( GComponent source ) {
-        GComponent focus = mFocus;
-        GComponent root = mInputRoot;
-
-        if( focus != source )
-            return;
-
-        GComponent target = mFocusPolicy.getComponentAfter( root, focus );
-
-        if( target != focus ) {
-            changeFocus( source, target, false );
-        }
-    }
-
-
+    
+    
     public void processTransferFocusBackward( GComponent source ) {
         GComponent focus = mFocus;
         GComponent root = mInputRoot;
@@ -203,6 +201,21 @@ public class GInputDispatcher {
             return;
 
         GComponent target = mFocusPolicy.getComponentBefore( root, focus );
+
+        if( target != focus ) {
+            changeFocus( source, target, false );
+        }
+    }
+    
+    
+    public void processTransferFocusForward( GComponent source ) {
+        GComponent focus = mFocus;
+        GComponent root = mInputRoot;
+
+        if( focus != source )
+            return;
+
+        GComponent target = mFocusPolicy.getComponentAfter( root, focus );
 
         if( target != focus ) {
             changeFocus( source, target, false );
@@ -221,7 +234,7 @@ public class GInputDispatcher {
 
         // Update focus.
         initFocus( source, true );
-
+        
         // Update mouse focus.
         validateMouse();
     }
@@ -257,9 +270,22 @@ public class GInputDispatcher {
         // Update mouse focus.
         validateMouse();
     }
-
-
-
+    
+    
+    public void processPropertyChange( GComponent source, String prop, Object oldValue, Object newValue ) {
+        if( prop == GComponent.PROP_DISPLAYED || prop == GComponent.PROP_ENABLED ) {
+            validateMouse();
+            validateFocus( source, false ); 
+        } else if( prop == GComponent.PROP_HAS_MOUSE_LISTENER ) {
+            validateMouse();
+        } else if( prop == GComponent.PROP_HAS_KEY_LISTENER ) {
+            validateFocus( source, false );
+        }
+    }
+    
+    
+    
+    
     private void validateRoot() {
         while( !isChild( mOwner, mInputRoot ) && !mInputStack.isEmpty() ) {
             InputFrame f = mInputStack.pop();
@@ -267,36 +293,36 @@ public class GInputDispatcher {
             changeFocus( mOwner, f.mFocus, false );
         }
     }
-
-
+    
+    
     private void validateFocus( GComponent source, boolean temporary ) {
-        GComponent root = mInputRoot;
+        GComponent root  = mInputRoot;
         GComponent focus = mFocus;
-
-        if( focus == null || !isChild( root, focus ) ) {
+        
+        if( focus == null || !GToolkit.isKeyboardFocusable( focus ) || !isChild( root, focus ) ) {
             initFocus( source, temporary );
         }
     }
-
-
+    
+    
     private void validateMouse() {
-        GComponent root = mInputRoot;
+        GComponent root  = mInputRoot;
         GComponent focus = mMouseButtonFocus;
-
-        if( focus != null && !isChild( root, focus ) ) {
+        
+        if( focus != null && ( !GToolkit.isMouseFocusable( focus ) || !isChild( root, focus ) ) ) {
             forceMouseRelease( focus );
             mMouseButtonFocus = null;
-            mMouseClickFocus = null;
+            mMouseClickFocus  = null;
         }
 
         focus = mMouseLocation;
 
-        if( focus == null || !isChild( root, focus ) ) {
+        if( focus == null || ( !GToolkit.isMouseFocusable( focus ) || !isChild( root, focus ) ) ) {
             initMouseLocation();
         }
     }
-
-
+    
+    
     private void initFocus( GComponent source, boolean temporary ) {
         GComponent target = mInputRoot;
         target = mFocusPolicy.getDefaultComponent( target );
@@ -358,26 +384,19 @@ public class GInputDispatcher {
     }
 
 
+    
+    
     private void forceMouseRelease( GComponent source ) {
-
-        int[] bm = { GMouseEvent.BUTTON1_DOWN_MASK,
-                GMouseEvent.BUTTON2_DOWN_MASK,
-                GMouseEvent.BUTTON3_DOWN_MASK };
-
-        int[] bi = { GMouseEvent.BUTTON1,
-                GMouseEvent.BUTTON2,
-                GMouseEvent.BUTTON3 };
-
         Box bounds = source.absoluteBounds();
-        int ex = mMouseX - bounds.x();
-        int ey = mMouseY - bounds.y();
-        int mods = mMouseMods;
-        long when = System.currentTimeMillis() * 1000L;
-
-        for( int i = 0; i < bm.length; i++ ) {
-            if( ( mMouseMods & bm[i]) != 0 ) {
-                mods &= ~bm[i];
-
+        int ex     = mMouseX - bounds.x();
+        int ey     = mMouseY - bounds.y();
+        int mods   = mMouseMods;
+        long when  = System.currentTimeMillis() * 1000L;
+        
+        for( int i = 0; i < BUTTON_MASKS.length; i++ ) {
+            if( ( mMouseMods & BUTTON_MASKS[i] ) != 0 ) {
+                mods &= ~BUTTON_MASKS[i];
+                
                 GMouseEvent e = new GMouseEvent( source,
                         GMouseEvent.MOUSE_RELEASED,
                         when,
@@ -386,10 +405,9 @@ public class GInputDispatcher {
                         ey,
                         0,
                         false,
-                        bi[i] );
+                        BUTTON_IDS[i] );
             }
         }
-
     }
 
 
@@ -433,8 +451,8 @@ public class GInputDispatcher {
             e.consume();
         }
     }
-
-
+    
+    
     private void resendMouseWheel( MouseWheelEvent e, int newId, GComponent source ) {
         Box bounds = source.absoluteBounds();
 
@@ -457,8 +475,8 @@ public class GInputDispatcher {
             e.consume();
         }
     }
-
-
+    
+    
     private void setMouseLocationComponent( MouseEvent e, GComponent comp ) {
         GComponent source = mMouseLocation;
 
@@ -475,8 +493,8 @@ public class GInputDispatcher {
             resendMouse( e, MouseEvent.MOUSE_ENTERED, comp );
         }
     }
-
-
+    
+    
     private void setMouseLocationComponent( GComponent comp ) {
         GComponent source = mMouseLocation;
 
@@ -493,8 +511,8 @@ public class GInputDispatcher {
             sendMouse( MouseEvent.MOUSE_ENTERED, comp );
         }
     }
-
-
+    
+    
     private boolean updateMouseLocation( MouseEvent e ) {
         GComponent c = mMouseLocation;
         GComponent root = mInputRoot;
@@ -504,7 +522,7 @@ public class GInputDispatcher {
         final int ey = mMouseY;
 
         if( c == null ) {
-            c = root.componentAt( ex - bounds.x(), ey - bounds.y() );
+            c = root.mouseFocusableComponentAt( ex - bounds.x(), ey - bounds.y() );
             if( c == null ) {
                 mMouseX = Integer.MIN_VALUE;
                 return false;
@@ -518,20 +536,20 @@ public class GInputDispatcher {
             int x = ex - b.x();
             int y = ey - b.y();
 
-            GComponent d = c.componentAt( x, y );
+            GComponent d = c.mouseFocusableComponentAt( x, y );
             if( c == d )
                 return true;
 
             if( d == null )
-                d = root.componentAt( ex - bounds.x(), ey - bounds.y() );
+                d = root.mouseFocusableComponentAt( ex - bounds.x(), ey - bounds.y() );
 
             setMouseLocationComponent( e, d );
             return d != null;
         }
 
     }
-
-
+    
+    
     private boolean initMouseLocation() {
         GComponent root = mInputRoot;
         final int ex = mMouseX;
@@ -543,7 +561,7 @@ public class GInputDispatcher {
         }
 
         Box bounds = root.absoluteBounds();
-        GComponent target = root.componentAt( ex - bounds.x(), ey - bounds.y() );
+        GComponent target = root.mouseFocusableComponentAt( ex - bounds.x(), ey - bounds.y() );
         if( target == null ) {
             setMouseLocationComponent( null );
             return false;

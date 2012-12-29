@@ -1,23 +1,46 @@
 package cogmac.glui;
 
+import cogmac.glui.event.*;
 
-class EventQueue {
 
-    private final int PRIORITY_REPAINT = 0;
-    private final int PRIORITY_LAYOUT  = 1;
-    private final int PRIORITY_OTHER   = 2;
-    private final int PRIORITY_MAX     = 3;
+class EventQueue implements GDispatcher {
+    
+    private static final int PRIORITY_REPAINT = 0;
+    private static final int PRIORITY_LAYOUT  = 1;
+    private static final int PRIORITY_OTHER   = 2;
+    private static final int PRIORITY_MAX     = 3;
+    
+    private final GComponent mRoot;
     
     private final Queue[] mQueues = new Queue[PRIORITY_MAX];
     
     private Item mItemPool    = null;
     private int mItemPoolSize = 0;
+    private boolean mIgnoreRepaints = false;
     
-    private GComponent mRoot;
+
+    EventQueue( GComponent root ) {
+        mRoot = root;
+        
+        for( int i = 0; i < mQueues.length; i++ ) {
+            mQueues[i] = new Queue();
+        }
+    }
     
     
+    public boolean ignoreRepaints() {
+        return mIgnoreRepaints;
+    }
     
-    synchronized void queuePaint( GComponent source ) {
+    public void ignoreRepaints( boolean ignoreRepaints ) {
+        mIgnoreRepaints = ignoreRepaints;
+    }
+    
+    
+    public synchronized void firePaint( GComponent source ) {
+        if( mIgnoreRepaints )
+            return;
+        
         Queue q = mQueues[PRIORITY_REPAINT];
         
         // Currently, all paint requests repaint entire screen.
@@ -26,68 +49,122 @@ class EventQueue {
             return;
         
         Item item = getItem();
-        item.mSource    = source;
-        item.mProcessor = PROCESS_PAINT;
+        item.mSource = source;
+        item.mCall   = PROCESS_PAINT;
         q.offer( item );
     }
     
-    synchronized void queueApplyLayout( GComponent source ) {
+    public synchronized void fireLayout( GComponent source ) {
         Queue q = mQueues[PRIORITY_LAYOUT];
         Item item = q.mHead;
         
         if( item != null ) {
-            if( item.mSource == source ) {
-                return;
-            } else {
-                item.mSource = mRoot; 
+            if( item.mSource != source ) {
+                item.mSource = mRoot;
             }
+            
+            return;
         }
         
         item = getItem();
         item.mSource = source;
-        item.mProcessor = PROCESS_APPLY_LAYOUT;
+        item.mCall = PROCESS_APPLY_LAYOUT;
+        q.offer( item );
+    }
+    
+    public synchronized void fireRequestFocus( GComponent source ) {
+        Item item = getItem();
+        item.mSource    = source;
+        item.mCall = PROCESS_REQUEST_FOCUS;
         mQueues[PRIORITY_OTHER].offer( item );
+    }
+    
+    public synchronized void fireTransferFocusBackward( GComponent source ) {
+        Item item = getItem();
+        item.mSource    = source;
+        item.mCall = PROCESS_TRANSFER_FOCUS_FORWARD;
+        mQueues[PRIORITY_OTHER].offer( item );
+    }
+    
+    public synchronized void fireTransferFocusForward( GComponent source ) {
+        Item item = getItem();
+        item.mSource    = source;
+        item.mCall = PROCESS_TRANSFER_FOCUS_BACKWARD;
+        mQueues[PRIORITY_OTHER].offer( item );
+    }
+    
+    public synchronized void firePushInputRoot( GComponent source ) {
+        Item item = getItem();
+        item.mSource    = source;
+        item.mCall = PROCESS_PUSH_INPUT_ROOT;
+        mQueues[PRIORITY_OTHER].offer( item );
+    }
+    
+    public synchronized void firePopInputRoot( GComponent source ) {
+        Item item = getItem();
+        item.mSource    = source;
+        item.mCall = PROCESS_POP_INPUT_ROOT;
+        mQueues[PRIORITY_OTHER].offer( item );
+    }
+    
+    public synchronized void fireComponentEvent( GComponentEvent event ) {
+        Item item = getItem();
+        item.mObject1 = event;
+        item.mCall = PROCESS_COMPONENT_EVENT;
+        mQueues[PRIORITY_OTHER].offer( item );
+    }
+    
+    public synchronized void fireAncestorEvent( GAncestorEvent event ) {
+        Item item = getItem();
+        item.mObject1 = event;
+        item.mCall = PROCESS_ANCESTOR_EVENT;
+        mQueues[PRIORITY_OTHER].offer( item );
+    }
+    
+    public synchronized void firePropertyChange( GComponent source, String prop, Object oldValue, Object newValue ) {
+        Item item = getItem();
+        item.mSource  = source;
+        item.mString  = prop;
+        item.mObject1 = oldValue;
+        item.mObject2 = newValue;
+        item.mCall    = PROCESS_PROPERTY_CHANGE;
+        mQueues[PRIORITY_OTHER].offer( item );
+    }
+    
+    
+    boolean processAllEvents( EventProcessor processor ) {
+        Item item   = null;
+        boolean ret = false;
         
-    }
-    
-    synchronized void queueRequestFocus( GComponent source ) {
-        Item item = getItem();
-        item.mSource    = source;
-        item.mProcessor = PROCESS_REQUEST_FOCUS;
-        mQueues[PRIORITY_OTHER].offer( item );
-    }
-    
-    synchronized void queueTransferFocusBackward( GComponent source ) {
-        Item item = getItem();
-        item.mSource    = source;
-        item.mProcessor = PROCESS_TRANSFER_FOCUS_FORWARD;
-        mQueues[PRIORITY_OTHER].offer( item );
-    }
-    
-    synchronized void queueTransferFocusForward( GComponent source ) {
-        Item item = getItem();
-        item.mSource    = source;
-        item.mProcessor = PROCESS_TRANSFER_FOCUS_BACKWARD;
-        mQueues[PRIORITY_OTHER].offer( item );
-    }
-    
-    synchronized void queuePushInputRoot( GComponent source ) {
-        Item item = getItem();
-        item.mSource    = source;
-        item.mProcessor = PROCESS_PUSH_INPUT_ROOT;
-        mQueues[PRIORITY_OTHER].offer( item );
-    }
-    
-    synchronized void queuePopInputRoot( GComponent source ) {
-        Item item = getItem();
-        item.mSource    = source;
-        item.mProcessor = PROCESS_POP_INPUT_ROOT;
-        mQueues[PRIORITY_OTHER].offer( item );
+        while( true ) {
+            synchronized( this ) {
+                // Return item first so there's only one sync block.
+                if( item != null ) {
+                    offerItem ( item );
+                    item = null;
+                }
+                
+                for( int n = PRIORITY_MAX - 1; item == null && n >= 0; n-- ) {
+                    item = mQueues[n].remove();
+                }
+            }
+            
+            if( item == null ) {
+                return ret;
+            }
+            
+            ret = true;
+            
+            try {
+                item.mCall.call( processor, item );
+            } catch( Exception ex ) {
+                ex.printStackTrace();
+            }
+        }
     }
     
     
     
-
     private Item getItem() {
         if( mItemPool == null ) {
             return new Item();
@@ -101,25 +178,37 @@ class EventQueue {
     }
     
     
+    private void offerItem( Item item ) {
+        if( mItemPoolSize == 0 ) {
+            item.clear();
+            mItemPool = item;
+            mItemPoolSize = 1;
+        } else if( mItemPoolSize < 128 ) {
+            item.clear();
+            item.mNext = mItemPool;
+            mItemPoolSize++;
+        }
+    }
+    
+    
     
     private static final class Item {
         
         Item mNext;
         
+        Call mCall;
         GComponent mSource;
-        String mStringParam;
+        String mString;
         Object mObject1;
         Object mObject2;
-        int mInt1;
-        int mInt2;
-        Processor mProcessor;
+        
         
         public void clear() {
-            mNext        = null;
-            mSource      = null;
-            mStringParam = null;
-            mObject1     = null;
-            mObject2     = null;
+            mNext    = null;
+            mSource  = null;
+            mString  = null;
+            mObject1 = null;
+            mObject2 = null;
         }
         
     }
@@ -139,53 +228,89 @@ class EventQueue {
             mTail = item;
         }
         
+        Item remove() {
+            if( mHead == null )
+                return null;
+            
+            Item ret = mHead;
+            
+            if( mHead.mNext == null ) {
+                mHead = mTail = null;
+            } else {
+                mHead = mHead.mNext;
+            }
+            
+            return ret;
+        }
+        
     }
 
-
-    private static interface Processor {
-        void process( EventDispatcher dispatch, Item item );
+    
+    private static interface Call {
+        void call( EventProcessor processor, Item item );
     }
 
     
-    private static final Processor PROCESS_PAINT = new Processor() {
-        public void process( EventDispatcher dispatch, Item item ) {
-            dispatch.repaint( item.mSource );
+    private static final Call PROCESS_PAINT = new Call() {
+        public void call( EventProcessor processor, Item item ) {
+            processor.processPaint( item.mSource );
         }
     };
     
-    private static final Processor PROCESS_APPLY_LAYOUT = new Processor() {
-        public void process( EventDispatcher dispatch, Item item ) {
-            dispatch.applyLayout( item.mSource );
+    private static final Call PROCESS_APPLY_LAYOUT = new Call() {
+        public void call( EventProcessor processor, Item item ) {
+            processor.processLayout( item.mSource );
         }
     };
     
-    private static final Processor PROCESS_REQUEST_FOCUS = new Processor() {
-        public void process( EventDispatcher dispatch, Item item ) {
-            dispatch.requestFocus( item.mSource );
+    private static final Call PROCESS_REQUEST_FOCUS = new Call() {
+        public void call( EventProcessor processor, Item item ) {
+            processor.processRequestFocus( item.mSource );
         }
     };
     
-    private static final Processor PROCESS_TRANSFER_FOCUS_BACKWARD = new Processor() {
-        public void process( EventDispatcher dispatch, Item item ) {
-            dispatch.transferFocusBackward( item.mSource );
+    private static final Call PROCESS_TRANSFER_FOCUS_BACKWARD = new Call() {
+        public void call( EventProcessor processor, Item item ) {
+            processor.processTransferFocusBackward( item.mSource );
         }
     };
     
-    private static final Processor PROCESS_TRANSFER_FOCUS_FORWARD = new Processor() {
-        public void process( EventDispatcher dispatch, Item item ) {
-            dispatch.transferFocusForward( item.mSource );
+    private static final Call PROCESS_TRANSFER_FOCUS_FORWARD = new Call() {
+        public void call( EventProcessor processor, Item item ) {
+            processor.processTransferFocusForward( item.mSource );
         }
     };
-    private static final Processor PROCESS_PUSH_INPUT_ROOT = new Processor() {
-        public void process( EventDispatcher dispatch, Item item ) {
-            dispatch.pushInputRoot( item.mSource );
+    
+    private static final Call PROCESS_PUSH_INPUT_ROOT = new Call() {
+        public void call( EventProcessor processor, Item item ) {
+            processor.processPushInputRoot( item.mSource );
         }
     };
-    private static final Processor PROCESS_POP_INPUT_ROOT = new Processor() {
-        public void process( EventDispatcher dispatch, Item item ) {
-            dispatch.popInputRoot( item.mSource );
+    
+    private static final Call PROCESS_POP_INPUT_ROOT = new Call() {
+        public void call( EventProcessor processor, Item item ) {
+            processor.processPopInputRoot( item.mSource );
         }
     };
-
-      
+ 
+    private static final Call PROCESS_PROPERTY_CHANGE = new Call() {
+        public void call( EventProcessor processor, Item item ) {
+            processor.processPropertyChange( item.mSource, item.mString, item.mObject1, item.mObject2 );
+        }
+    };
+    
+    private static final Call PROCESS_COMPONENT_EVENT = new Call() {
+        public void call( EventProcessor processor, Item item ) {
+            GComponentEvent e = (GComponentEvent)item.mObject1;
+            e.source().processComponentEvent( e );
+        }
+    };
+    
+    private static final Call PROCESS_ANCESTOR_EVENT = new Call() {
+        public void call( EventProcessor processor, Item item ) {
+            GAncestorEvent e = (GAncestorEvent)item.mObject1;
+            e.source().processAncestorEvent( e );
+        }
+    };
+    
 }

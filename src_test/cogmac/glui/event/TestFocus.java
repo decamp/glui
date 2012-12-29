@@ -128,8 +128,8 @@ public class TestFocus {
         public void mouseExited(GMouseEvent e) {
             mHasMouse = false;
         }
-
-
+        
+        
         public void mousePressed(GMouseEvent e) {
             if(e.getButton() == 1) {
                 mMouseDown = true;
@@ -137,19 +137,22 @@ public class TestFocus {
             }else if(e.getButton() == 3) {
                 mMouse3Down = true;
                 
-                
-            
-            } else if( e.getButton() == 2 ) { 
-                if((e.getModifiers() & GMouseEvent.META_DOWN_MASK) == 0) {
-                    startModal();
-                }else{
-                    System.out.println( "Stop modal" );
-                    stopModal();
+                if( ( e.getModifiers() & GMouseEvent.META_DOWN_MASK ) != 0 ) {
+                    if( ( e.getModifiers() & GMouseEvent.SHIFT_DOWN_MASK ) == 0 ) {
+                        System.out.println( "Start modal: " + mIndex );
+                        startModal();
+                        //setVisible( false );
+                        //if( getParent() != null ) {
+                        //    getParent().removeChild( this );
+                        //}
+                    } else {
+                        System.out.println( "Stop modal: " + mIndex );
+                        stopModal();
+                    }
                 }
             }
 
             requestFocus();
-            
         }
 
 
@@ -166,6 +169,7 @@ public class TestFocus {
 
 
         public void focusGained(GFocusEvent e) {
+            System.out.println( "Has focus: " + mIndex );
             mHasFocus = true;
         }
 

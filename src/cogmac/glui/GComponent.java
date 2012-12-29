@@ -2,6 +2,7 @@ package cogmac.glui;
 
 import java.awt.Font;
 import java.util.*;
+
 import cogmac.glui.event.*;
 
 
@@ -10,10 +11,10 @@ import cogmac.glui.event.*;
  */
 public interface GComponent {
 
-    public static final String PROP_VISIBILE           = "visible";
-    public static final String PROP_ENABLED            = "enable";
-    public static final String PROP_HAS_MOUSE_LISTENER = "mouseListener";
-    public static final String PROP_HAS_KEY_LISTENER   = "keyListener";
+    public static final String PROP_ENABLED            = "enabled";
+    public static final String PROP_DISPLAYED          = "displayed";
+    public static final String PROP_HAS_MOUSE_LISTENER = "hasMouseListener";
+    public static final String PROP_HAS_KEY_LISTENER   = "hasKeyListener";
     
     public void addChild( GComponent pane );
     public void removeChild( GComponent pane );
@@ -37,6 +38,14 @@ public interface GComponent {
     public void setEnabled( boolean enable );
     public boolean isEnabled();
     
+    /**
+     * @return true iff these conditions are all true: <br/>
+     *        This component has been placed in a component hierarchy with valid root.
+     *        This component is visible.
+     *        All ancestors of this component are visible.
+     */
+    public boolean isDisplayed();
+    
     public GComponent foreground( GColor color );
     public GColor foreground();
     public GComponent background( GColor color );
@@ -44,11 +53,10 @@ public interface GComponent {
     public GComponent font( Font font );
     public Font font();
     
-    public void startModal();
-    public void stopModal();
-    
     public void addComponentListener( GComponentListener listener );
     public void removeComponentListener( GComponentListener listener );
+    public void addAncestorListener( GAncestorListener listener );
+    public void removeAncestorListener( GAncestorListener listener );
     public void addFocusListener( GFocusListener listener );
     public void removeFocusListener( GFocusListener listener );
     public void addMouseListener( GMouseListener listener );
@@ -62,15 +70,18 @@ public interface GComponent {
     public void addPaintListener( GPaintListener listener );
     public void removePaintListener( GPaintListener listener );
     
-    public boolean hasKeyboardListener();
+    public boolean hasKeyListener();
     public boolean hasMouseListener();
     
+    public boolean hasFocus();
     public boolean requestFocus();
     public void transferFocusBackward();
     public void transferFocusForward();
+    public void startModal();
+    public void stopModal();
     
     public GComponent componentAt( int x, int y );
-    public GComponent visibleComponentAt( int x, int y );
+    public GComponent displayedComponentAt( int x, int y );
     public GComponent mouseFocusableComponentAt( int x, int y );
     
     public void applyLayout();
@@ -79,29 +90,22 @@ public interface GComponent {
     public boolean needsRepaint();
     
     /**
-     * Methods that should only be called by the parent pane.
+     * Methods that should only be called by the parent component.
      */
-    public void setParent( GComponent pane );
-    public void processLayoutEvent();
-    public void processPaintEvent( GGraphics g );
+    public void treeProcessParentChanged( GDispatcher dispatcher, GComponent parent );
+    public void treeProcessAncestorMoved( GComponent source );
+    public void treeProcessAncestorResized( GComponent source );
+    public void treeProcessParentShown();
+    public void treeProcessParentHidden();
+    
+    public void processLayout();
+    public void processPaint( GGraphics g );
     public void processComponentEvent( GComponentEvent e );
+    public void processAncestorEvent( GAncestorEvent e );
     public void processFocusEvent( GFocusEvent e );
     public void processMouseEvent( GMouseEvent e );
     public void processMouseMotionEvent( GMouseEvent e );
     public void processMouseWheelEvent( GMouseWheelEvent e );
     public void processKeyEvent( GKeyEvent e );
-    
-    
-    /**
-     * Methods that should only be called by a child pane.
-     */
-    public void fireLayoutRequest( GComponent source );
-    public void firePaintRequest( GComponent source );
-    public void fireRequestFocus( GComponent source );
-    public void fireTransferFocusBackward( GComponent source );
-    public void fireTransferFocusForward( GComponent source );
-    public void firePushInputRoot( GComponent source );
-    public void firePopInputRoot( GComponent source );
-    public void firePropertyChange( GComponent source, String prop, Object oldValue, Object newValue );
     
 }

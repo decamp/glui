@@ -1,75 +1,96 @@
 package cogmac.glui.event;
 
-import java.awt.AWTEventMulticaster;
+import java.awt.event.*;
 import java.util.EventListener;
-
 import cogmac.glui.GGraphics;
 
 
 /**
  * @author decamp
  */
-public class GluiMulticaster extends AWTEventMulticaster implements GPaintListener, 
-                                                                    GFocusListener,
-                                                                    GComponentListener, 
-                                                                    GMouseListener, 
-                                                                    GMouseMotionListener, 
-                                                                    GMouseWheelListener,
-                                                                    GKeyListener
+public class GluiMulticaster implements ActionListener,
+                                        GPaintListener, 
+                                        GFocusListener,
+                                        GComponentListener,
+                                        GAncestorListener,
+                                        GMouseListener, 
+                                        GMouseMotionListener, 
+                                        GMouseWheelListener,
+                                        GKeyListener
 {
+    
+    public static ActionListener add( ActionListener a, ActionListener b ) {
+        return (ActionListener)addInternal( a, b );
+    }
+    
+    
+    public static ActionListener remove( ActionListener a, ActionListener b ) {
+        return (ActionListener)removeInternal( a, b );
+    }
+    
 
-    public static GPaintListener add(GPaintListener a, GPaintListener b) {
-        return (GPaintListener)addInternalGlui(a, b);
+    public static GPaintListener add( GPaintListener a, GPaintListener b ) {
+        return (GPaintListener)addInternal( a, b );
     }
     
     
-    public static GPaintListener remove(GPaintListener caster, GPaintListener listener) {
-        return (GPaintListener)removeInternal(caster, listener);
+    public static GPaintListener remove( GPaintListener caster, GPaintListener listener ) {
+        return (GPaintListener)removeInternal( caster, listener );
     }
     
     
-    public static GComponentListener add(GComponentListener a, GComponentListener b) {
-        return (GComponentListener)addInternalGlui(a, b);
+    public static GComponentListener add( GComponentListener a, GComponentListener b ) {
+        return (GComponentListener)addInternal( a, b );
     }
     
     
-    public static GComponentListener remove(GComponentListener caster, GComponentListener listener) {
-        return (GComponentListener)removeInternal(caster, listener);
-    }
-
-    
-    public static GMouseListener add(GMouseListener a, GMouseListener b) {
-        return (GMouseListener)addInternalGlui(a, b);
+    public static GComponentListener remove( GComponentListener caster, GComponentListener listener ) {
+        return (GComponentListener)removeInternal( caster, listener );
     }
     
     
-    public static GMouseListener remove(GMouseListener caster, GMouseListener listener) {
-        return (GMouseListener)removeInternal(caster, listener);
-    }
-
-    
-    public static GMouseMotionListener add(GMouseMotionListener a, GMouseMotionListener b) {
-        return (GMouseMotionListener)addInternalGlui(a, b);
+    public static GAncestorListener add( GAncestorListener a, GAncestorListener b ) {
+        return (GAncestorListener)addInternal( a, b );
     }
     
     
-    public static GMouseMotionListener remove(GMouseMotionListener caster, GMouseMotionListener listener) {
-        return (GMouseMotionListener)removeInternal(caster, listener);
-    }
-
-    
-    public static GMouseWheelListener add(GMouseWheelListener a, GMouseWheelListener b) {
-        return (GMouseWheelListener)addInternalGlui(a, b);
+    public static GAncestorListener remove( GAncestorListener caster, GAncestorListener listener ) {
+        return (GAncestorListener)removeInternal( caster, listener );
     }
     
     
-    public static GMouseWheelListener remove(GMouseWheelListener caster, GMouseWheelListener listener) {
-        return (GMouseWheelListener)removeInternal(caster, listener);
+    public static GMouseListener add( GMouseListener a, GMouseListener b ) {
+        return (GMouseListener)addInternal( a, b );
+    }
+    
+    
+    public static GMouseListener remove( GMouseListener caster, GMouseListener listener ) {
+        return (GMouseListener)removeInternal( caster, listener );
     }
 
     
-    public static GFocusListener add(GFocusListener a, GFocusListener b) {
-        return (GFocusListener)addInternalGlui(a, b);
+    public static GMouseMotionListener add( GMouseMotionListener a, GMouseMotionListener b ) {
+        return (GMouseMotionListener)addInternal( a, b );
+    }
+    
+    
+    public static GMouseMotionListener remove( GMouseMotionListener caster, GMouseMotionListener listener ) {
+        return (GMouseMotionListener)removeInternal( caster, listener );
+    }
+
+    
+    public static GMouseWheelListener add( GMouseWheelListener a, GMouseWheelListener b ) {
+        return (GMouseWheelListener)addInternal( a, b );
+    }
+    
+    
+    public static GMouseWheelListener remove( GMouseWheelListener caster, GMouseWheelListener listener ) {
+        return (GMouseWheelListener)removeInternal( caster, listener );
+    }
+
+    
+    public static GFocusListener add( GFocusListener a, GFocusListener b ) {
+        return (GFocusListener)addInternal( a, b );
     }
     
     
@@ -78,139 +99,314 @@ public class GluiMulticaster extends AWTEventMulticaster implements GPaintListen
     }
     
     
-    public static GKeyListener add(GKeyListener a, GKeyListener b) {
-        return (GKeyListener)addInternalGlui(a, b);
+    public static GKeyListener add( GKeyListener a, GKeyListener b ) {
+        return (GKeyListener)addInternal(a, b);
     }
     
     
-    public static GKeyListener remove(GKeyListener caster, GKeyListener listener) {
-        return (GKeyListener)removeInternal(caster, listener);
+    public static GKeyListener remove( GKeyListener caster, GKeyListener listener ) {
+        return (GKeyListener)removeInternal( caster, listener );
     }
 
 
     
-    
-    public void paint(GGraphics g) {
-        ((GPaintListener)a).paint(g);
-        ((GPaintListener)b).paint(g);
+    public void actionPerformed( ActionEvent e ) {
+        GluiMulticaster c = this;
+        do {
+            ((ActionListener)c.mListener).actionPerformed( e );
+            c = c.mNext;
+        } while( c != null );
     }
     
     
-    
-    
-    public void componentShown(GComponentEvent e) {
-        ((GComponentListener)a).componentShown(e);
-        ((GComponentListener)b).componentShown(e);
+    public void paint( GGraphics g ) {
+        GluiMulticaster c = this;
+        do {
+            ((GPaintListener)c.mListener).paint( g );
+            c = c.mNext;
+        } while( c != null );
     }
     
     
-    public void componentHidden(GComponentEvent e) {
-        ((GComponentListener)a).componentHidden(e);
-        ((GComponentListener)b).componentHidden(e);
+    public void componentShown( GComponentEvent e ) {
+        GluiMulticaster c = this;
+        do {
+            ((GComponentListener)c.mListener).componentShown( e );
+            c = c.mNext;
+        } while( c != null );
     }
     
     
-    public void componentMoved(GComponentEvent e) {
-        ((GComponentListener)a).componentMoved(e);
-        ((GComponentListener)b).componentMoved(e);
+    public void componentHidden( GComponentEvent e ) {
+        GluiMulticaster c = this;
+        do {
+            ((GComponentListener)c.mListener).componentHidden( e );
+            c = c.mNext;
+        } while( c != null );
+    }
+    
+    
+    public void componentMoved( GComponentEvent e ) {
+        GluiMulticaster c = this;
+        do {
+            ((GComponentListener)c.mListener).componentMoved( e );
+            c = c.mNext;
+        } while( c != null );
     }
 
     
     public void componentResized(GComponentEvent e) {
-        ((GComponentListener)a).componentResized(e);
-        ((GComponentListener)b).componentResized(e);
+        GluiMulticaster c = this;
+        do {
+            ((GComponentListener)c.mListener).componentResized( e );
+            c = c.mNext;
+        } while( c != null );
     }
 
     
-    public void mouseEntered(GMouseEvent e) {
-        ((GMouseListener)a).mouseEntered(e);
-        ((GMouseListener)b).mouseEntered(e);
+    public void ancestorChanged( GAncestorEvent e ) {
+        GluiMulticaster c = this;
+        do {
+            ((GAncestorListener)c.mListener).ancestorChanged( e );
+            c = c.mNext;
+        } while( c != null );
+    }
+    
+    
+    public void ancestorMoved( GAncestorEvent e ) {
+        GluiMulticaster c = this;
+        do {
+            ((GAncestorListener)c.mListener).ancestorMoved( e );
+            c = c.mNext;
+        } while( c != null );
+    }
+    
+    
+    public void ancestorResized( GAncestorEvent e ) {
+        GluiMulticaster c = this;
+        do {
+            ((GAncestorListener)c.mListener).ancestorResized( e );
+            c = c.mNext;
+        } while( c != null );
+    }
+    
+    
+    public void mouseEntered( GMouseEvent e ) {
+        GluiMulticaster c = this;
+        do {
+            ((GMouseListener)c.mListener).mouseEntered( e );
+            c = c.mNext;
+        } while( c != null );
     }
 
     
-    public void mouseExited(GMouseEvent e) {
-        ((GMouseListener)a).mouseExited(e);
-        ((GMouseListener)b).mouseExited(e);
+    public void mouseExited( GMouseEvent e ) {
+        GluiMulticaster c = this;
+        do {
+            ((GMouseListener)c.mListener).mouseExited( e );
+            c = c.mNext;
+        } while( c != null );
     }
 
     
-    public void mousePressed(GMouseEvent e) {
-        ((GMouseListener)a).mousePressed(e);
-        ((GMouseListener)b).mousePressed(e);
+    public void mousePressed( GMouseEvent e ) {
+        GluiMulticaster c = this;
+        do {
+            ((GMouseListener)c.mListener).mousePressed( e );
+            c = c.mNext;
+        } while( c != null );
     }
 
     
-    public void mouseReleased(GMouseEvent e) {
-        ((GMouseListener)a).mouseReleased(e);
-        ((GMouseListener)b).mouseReleased(e);
+    public void mouseReleased( GMouseEvent e ) {
+        GluiMulticaster c = this;
+        do {
+            ((GMouseListener)c.mListener).mouseReleased( e );
+            c = c.mNext;
+        } while( c != null );
     }
 
     
-    public void mouseClicked(GMouseEvent e) {
-        ((GMouseListener)a).mouseClicked(e);
-        ((GMouseListener)b).mouseClicked(e);
+    public void mouseClicked( GMouseEvent e ) {
+        GluiMulticaster c = this;
+        do {
+            ((GMouseListener)c.mListener).mouseClicked( e );
+            c = c.mNext;
+        } while( c != null );
     }
 
     
-    public void mouseMoved(GMouseEvent e) {
-        ((GMouseMotionListener)a).mouseMoved(e);
-        ((GMouseMotionListener)b).mouseMoved(e);
+    public void mouseMoved( GMouseEvent e ) {
+        GluiMulticaster c = this;
+        do {
+            ((GMouseMotionListener)c.mListener).mouseMoved( e );
+            c = c.mNext;
+        } while( c != null );
     }
 
     
-    public void mouseDragged(GMouseEvent e) {
-        ((GMouseMotionListener)a).mouseDragged(e);
-        ((GMouseMotionListener)b).mouseDragged(e);
+    public void mouseDragged( GMouseEvent e ) {
+        GluiMulticaster c = this;
+        do {
+            ((GMouseMotionListener)c.mListener).mouseDragged( e );
+            c = c.mNext;
+        } while( c != null );
     }
 
     
-    public void mouseWheelMoved(GMouseWheelEvent e) {
-        ((GMouseWheelListener)a).mouseWheelMoved(e);
-        ((GMouseWheelListener)b).mouseWheelMoved(e);
+    public void mouseWheelMoved( GMouseWheelEvent e ) {
+        GluiMulticaster c = this;
+        do {
+            ((GMouseWheelListener)c.mListener).mouseWheelMoved( e );
+            c = c.mNext;
+        } while( c != null );
     }
 
     
-    public void focusGained(GFocusEvent e) {
-        ((GFocusListener)a).focusGained(e);
-        ((GFocusListener)b).focusGained(e);
+    public void focusGained( GFocusEvent e ) {
+        GluiMulticaster c = this;
+        do {
+            ((GFocusListener)c.mListener).focusGained( e );
+            c = c.mNext;
+        } while( c != null );
     }
     
     
-    public void focusLost(GFocusEvent e) {
-        ((GFocusListener)a).focusLost(e);
-        ((GFocusListener)b).focusLost(e);
-    }
-
-    
-    public void keyPressed(GKeyEvent e) {
-        ((GKeyListener)a).keyPressed(e);
-        ((GKeyListener)b).keyPressed(e);
-    }
-    
-    
-    public void keyReleased(GKeyEvent e) {
-        ((GKeyListener)a).keyReleased(e);
-        ((GKeyListener)b).keyReleased(e);
-    }
-    
-    
-    public void keyTyped(GKeyEvent e) {
-        ((GKeyListener)a).keyTyped(e);
-        ((GKeyListener)b).keyTyped(e);
-    }
-    
-    
-    
-    protected GluiMulticaster(EventListener a, EventListener b) {
-        super(a, b);
+    public void focusLost( GFocusEvent e ) {
+        GluiMulticaster c = this;
+        do {
+            ((GFocusListener)c.mListener).focusLost( e );
+            c = c.mNext;
+        } while( c != null );
     }
 
-
-    protected static EventListener addInternalGlui(EventListener a, EventListener b) {
-        if (a == null)  return b;
-        if (b == null)  return a;
-        return new GluiMulticaster(a, b);
+    
+    public void keyPressed( GKeyEvent e ) {
+        GluiMulticaster c = this;
+        do {
+            ((GKeyListener)c.mListener).keyPressed( e );
+            c = c.mNext;
+        } while( c != null );
     }
-
+    
+    
+    public void keyReleased( GKeyEvent e ) {
+        GluiMulticaster c = this;
+        do {
+            ((GKeyListener)c.mListener).keyReleased( e );
+            c = c.mNext;
+        } while( c != null );
+    }
+    
+    
+    public void keyTyped( GKeyEvent e ) {
+        GluiMulticaster c = this;
+        do {
+            ((GKeyListener)c.mListener).keyTyped( e );
+            c = c.mNext;
+        } while( c != null );
+    }
+    
+    
+    
+    private final GluiMulticaster mNext;
+    private final EventListener mListener;
+    
+    
+    protected GluiMulticaster( GluiMulticaster next, EventListener listener ) {
+        mNext = next;
+        mListener = listener;
+    }
+    
+    
+    
+    protected static EventListener addInternal( EventListener a, EventListener b ) {
+        if( a == null ) return b;
+        if( b == null ) return a;
+        
+        if( a instanceof GluiMulticaster ) {
+            if( b instanceof GluiMulticaster ) {
+                // Reconstruct B to point at A.
+                GluiMulticaster head = (GluiMulticaster)a;
+                GluiMulticaster tail = (GluiMulticaster)b;
+                
+                do {
+                    head = new GluiMulticaster( head, tail.mListener );
+                    tail = tail.mNext;
+                } while( tail != null );
+                
+                return head;
+            }
+            
+            return new GluiMulticaster( (GluiMulticaster)a, b );
+        }
+        
+        if( b instanceof GluiMulticaster ) {
+            return new GluiMulticaster( (GluiMulticaster)b, a );
+        }
+        
+        // Both need new GluiMulticaster to wrap them.
+        return new GluiMulticaster( new GluiMulticaster( null, b ), a );
+    }
+    
+    
+    protected static EventListener removeInternal( EventListener caster, EventListener old ) {
+        if( caster == null || old == null ) {
+            return caster;
+        }
+            
+        if( caster instanceof GluiMulticaster ) {
+            GluiMulticaster head = (GluiMulticaster)caster;
+            GluiMulticaster pos  = head;
+            
+            // Find link to remove.
+            while( pos != null && pos.mListener != old ) {
+                pos = pos.mNext;
+            }
+            
+            if( pos == null ) {
+                // Not found.
+                return head;
+            }
+            
+            if( pos == head ) {
+                // Remove the head.
+                head = head.mNext;
+                
+                // Check if remaining sequence contains single listener.
+                if( head != null && head.mNext == null ) {
+                    // Remaining sequence contains single listener,
+                    // which may be returned directly.
+                    return head.mListener;
+                }
+                
+                return head;
+            }
+             
+            // Reconstruct chain without pos link.
+            GluiMulticaster tail = pos.mNext;
+            
+            if( head.mNext == pos && tail == null ) {
+                // head is the only link.
+                return head.mListener;
+            }
+                
+            // Reconstruct head--pos subsequence.
+            do {
+                tail = new GluiMulticaster( tail, head.mListener );
+                head = head.mNext;
+            } while( head != pos );
+            
+            return tail;
+        } 
+        
+        if( caster == old ) {
+            // Remove single listener.
+            return null;
+        }
+        
+        // Not found.
+        return caster;
+    }
 
 }

@@ -69,7 +69,7 @@ public class GTextField extends GPanel {
 
     
     @Override
-    public void paint( GGraphics g ) {
+    public void paintComponent( GGraphics g ) {
         GL gl = g.gl();
         final int w = width();
         final int h = height();

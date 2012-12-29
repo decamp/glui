@@ -14,14 +14,16 @@ import cogmac.glui.event.*;
  * @author decamp
  */
 public class GPanel implements GComponent {
-
+    
     private static final GColor DEFAULT_FOREGROUND = GColor.WHITE;
     private static final GColor DEFAULT_BACKGROUND = null;
     private static final Font DEFAULT_FONT         = new Font( "Verdana", Font.PLAIN, 12 );
     
+    private GDispatcher mDispatcher = null; 
+    private GComponent mParent      = null;
     private final List<GComponent> mChildren     = new ArrayList<GComponent>();
     private final List<GComponent> mSafeChildren = Collections.unmodifiableList( mChildren );
-    private GComponent mParent = null;
+    
     private GLayout mLayout = null;
     
     private int mX = 0;
@@ -34,17 +36,17 @@ public class GPanel implements GComponent {
     private GColor mBackground = DEFAULT_BACKGROUND;
     private Font mFont         = DEFAULT_FONT;
     
+    private boolean mDisplayed = false;
     private boolean mVisible   = true;
     private boolean mEnabled   = true;
     private boolean mFocusable = false;
     private boolean mHasFocus  = false;
     
-    private boolean mNeedsPaint       = false;
-    private boolean mNeedsLayout      = false;
-    private boolean mPerformingLayout = false;
-    
+    private boolean mNeedsPaint  = false;
+    private boolean mNeedsLayout = false;
     
     private GComponentListener mComponentCaster = null;
+    private GAncestorListener mAncestorCaster = null;
     private GFocusListener mFocusCaster = null;
     private GPaintListener mPaintCaster = null;
     private GMouseListener mMouseCaster = null;
@@ -52,35 +54,34 @@ public class GPanel implements GComponent {
     private GMouseWheelListener mMouseWheelCaster = null;
     private GKeyListener mKeyCaster = null;
     
-    
 
-    public void addChild( GComponent pane ) {
-        if( mChildren.contains( pane ) )
+    public synchronized void addChild( GComponent child ) {
+        if( mChildren.contains( child ) )
             return;
-
-        mChildren.add( pane );
-        pane.setParent( this );
+        
+        mChildren.add( child );
+        child.treeProcessParentChanged( mDispatcher, this );
         applyLayout();
     }
-
-    public void removeChild( GComponent pane ) {
-        if( mChildren.remove( pane ) ) {
-            pane.setParent( null );
+    
+    public synchronized void removeChild( GComponent child ) {
+        if( mChildren.remove( child ) ) {
+            child.treeProcessParentChanged( null, null );
             applyLayout();
         }
     }
-
-    public void clearChildren() {
+    
+    public synchronized void clearChildren() {
         if( mChildren.isEmpty() )
             return;
-
+        
         for( GComponent p : mChildren )
-            p.setParent( null );
-
+            p.treeProcessParentChanged( null, null );
+        
         mChildren.clear();
         applyLayout();
     }
-
+    
     public List<GComponent> getChildren() {
         return mSafeChildren;
     }
@@ -92,29 +93,31 @@ public class GPanel implements GComponent {
     public GComponent getParent() {
         return mParent;
     }
-
-
-
+    
+    
     public Box bounds() {
         return Box.fromBounds( mX, mY, mW, mH );
     }
 
     public Box absoluteBounds() {
         Box ret = mAbsoluteBounds;
-
-        if( ret == null ) {
-            GComponent parent = mParent;
-
-            if( parent == null ) {
+        if( ret != null )
+            return ret;
+        
+        GComponent parent = mParent;
+        if( parent != null )
+            ret = parent.absoluteBounds();
+        
+        synchronized( this ) {
+            if( ret == null ) {
                 ret = Box.fromBounds( mX, mY, mW, mH );
             } else {
-                ret = parent.absoluteBounds();
                 ret = Box.fromBounds( ret.x() + mX, ret.y() + mY, mW, mH );
             }
-
+            
             mAbsoluteBounds = ret;
         }
-
+        
         return ret;
     }
 
@@ -133,19 +136,20 @@ public class GPanel implements GComponent {
     public int height() {
         return mH;
     }
-
+    
     public boolean contains( int x, int y ) {
-        if( !mVisible )
-            return false;
-
         return x >= 0 && y >= 0 && x < mW && y < mH;
     }
-
+    
     public GComponent position( int x, int y ) {
         return bounds( x, y, width(), height() );
     }
-
-    public GComponent bounds( int x, int y, int w, int h ) {
+    
+    public GComponent size( int w, int h ) {
+        return bounds( x(), y(), w, h );
+    }
+    
+    public synchronized GComponent bounds( int x, int y, int w, int h ) {
         boolean moved   = x != mX || y != mY;
         boolean resized = w != mW || h != mH;
         
@@ -155,45 +159,59 @@ public class GPanel implements GComponent {
             mW = w;
             mH = h;
             mAbsoluteBounds = null;
-            notifyNewBounds( moved, resized );
-            applyLayout();
+            
+            if( moved ) {
+                treeProcessAncestorMoved( this );
+            }
+            
+            if( resized ) {
+                treeProcessAncestorResized( this );
+                applyLayout();
+            }
         }
         
         return this;
     }
-
-    public GComponent size( int w, int h ) {
-        return bounds( x(), y(), w, h );
-    }
-
-    public void setVisible( boolean visible ) {
+    
+    public synchronized void setVisible( boolean visible ) {
         if( visible == mVisible )
             return;
-
+        
         mVisible = visible;
-        if( mComponentCaster == null )
+        if( !updateDisplayed() ) 
             return;
-
-        int code = visible ? ComponentEvent.COMPONENT_SHOWN : ComponentEvent.COMPONENT_HIDDEN;
-        processComponentEvent( new GComponentEvent( this, code ) );
+        
+        if( visible ) {
+            treeProcessParentShown();
+        } else {
+            treeProcessParentHidden();
+        }
     }
-
+    
     public boolean isVisible() {
         return mVisible;
     }
-
-    public void setEnabled( boolean enable ) {
+    
+    public synchronized void setEnabled( boolean enable ) {
         if( enable == mEnabled )
             return;
         
         mEnabled = enable;
+        
+        if( mDispatcher != null ) {
+            mDispatcher.firePropertyChange( this, PROP_ENABLED, !enable, enable );
+        }
     }
-
+    
     public boolean isEnabled() {
         return mEnabled;
     }
-
-
+    
+    public boolean isDisplayed() {
+        return mDisplayed;
+    }
+    
+    
     public GPanel font( Font font ) {
         mFont = font == null ? DEFAULT_FONT : font;
         return this;
@@ -222,101 +240,156 @@ public class GPanel implements GComponent {
     }
 
     
-    public void startModal() {
-        firePushInputRoot( this );
-    }
-
-    public void stopModal() {
-        firePopInputRoot( this );
-    }
-
-
-    public void addComponentListener( GComponentListener listener ) {
+    public synchronized void addComponentListener( GComponentListener listener ) {
         mComponentCaster = GluiMulticaster.add( mComponentCaster, listener );
     }
-
-    public void removeComponentListener( GComponentListener listener ) {
+    
+    public synchronized void removeComponentListener( GComponentListener listener ) {
         mComponentCaster = GluiMulticaster.remove( mComponentCaster, listener );
     }
-
-    public void addFocusListener( GFocusListener listener ) {
+    
+    public synchronized void addAncestorListener( GAncestorListener listener ) {
+        mAncestorCaster = GluiMulticaster.add( mAncestorCaster, listener );
+    }
+    
+    public synchronized void removeAncestorListener( GAncestorListener listener ) {
+        mAncestorCaster = GluiMulticaster.remove( mAncestorCaster, listener );
+    }
+    
+    public synchronized void addFocusListener( GFocusListener listener ) {
         mFocusCaster = GluiMulticaster.add( mFocusCaster, listener );
     }
-
-    public void removeFocusListener( GFocusListener listener ) {
+    
+    public synchronized void removeFocusListener( GFocusListener listener ) {
         mFocusCaster = GluiMulticaster.remove( mFocusCaster, listener );
     }
-
-    public void addMouseListener( GMouseListener listener ) {
+    
+    public synchronized void addMouseListener( GMouseListener listener ) {
+        boolean prev = hasMouseListener();
         mMouseCaster = GluiMulticaster.add( mMouseCaster, listener );
+        if( mDispatcher != null && prev != hasMouseListener() ) {
+            mDispatcher.firePropertyChange( this, PROP_HAS_MOUSE_LISTENER, false, true );
+        }
     }
-
-    public void removeMouseListener( GMouseListener listener ) {
+    
+    public synchronized void removeMouseListener( GMouseListener listener ) {
+        boolean prev = hasMouseListener();
         mMouseCaster = GluiMulticaster.remove( mMouseCaster, listener );
+        if( mDispatcher != null && prev != hasMouseListener() ) {
+            mDispatcher.firePropertyChange( this, PROP_HAS_MOUSE_LISTENER, true, false );
+        }
     }
-
-    public void addMouseMotionListener( GMouseMotionListener listener ) {
+    
+    public synchronized void addMouseMotionListener( GMouseMotionListener listener ) {
+        boolean prev = hasMouseListener();
         mMouseMotionCaster = GluiMulticaster.add( mMouseMotionCaster, listener );
+        if( mDispatcher != null && prev != hasMouseListener() ) {
+            mDispatcher.firePropertyChange( this, PROP_HAS_MOUSE_LISTENER, false, true );
+        }
     }
-
-    public void removeMouseMotionListener( GMouseMotionListener listener ) {
+    
+    public synchronized void removeMouseMotionListener( GMouseMotionListener listener ) {
+        boolean prev = hasMouseListener();
         mMouseMotionCaster = GluiMulticaster.remove( mMouseMotionCaster, listener );
+        if( mDispatcher != null && prev != hasMouseListener() ) {
+            mDispatcher.firePropertyChange( this, PROP_HAS_MOUSE_LISTENER, true, false );
+        }
     }
 
-    public void addMouseWheelListener( GMouseWheelListener listener ) {
+    public synchronized void addMouseWheelListener( GMouseWheelListener listener ) {
+        boolean prev = hasMouseListener();
         mMouseWheelCaster = GluiMulticaster.add( mMouseWheelCaster, listener );
+        if( mDispatcher != null && prev != hasMouseListener() ) {
+            mDispatcher.firePropertyChange( this, PROP_HAS_MOUSE_LISTENER, false, true );
+        }
     }
 
-    public void removeMouseWheelListener( GMouseWheelListener listener ) {
+    public synchronized void removeMouseWheelListener( GMouseWheelListener listener ) {
+        boolean prev = hasMouseListener();
         mMouseWheelCaster = GluiMulticaster.remove( mMouseWheelCaster, listener );
+        if( mDispatcher != null && prev != hasMouseListener() ) {
+            mDispatcher.firePropertyChange( this, PROP_HAS_MOUSE_LISTENER, true, false );
+        }
     }
 
-    public void addKeyListener( GKeyListener listener ) {
+    public synchronized void addKeyListener( GKeyListener listener ) {
+        boolean prev = hasKeyListener();
         mKeyCaster = GluiMulticaster.add( mKeyCaster, listener );
+        if( mDispatcher != null && prev != hasKeyListener() ) {
+            mDispatcher.firePropertyChange( this, PROP_HAS_KEY_LISTENER, false, true );
+        }
     }
-
-    public void removeKeyListener( GKeyListener listener ) {
+    
+    public synchronized void removeKeyListener( GKeyListener listener ) {
+        boolean prev = hasKeyListener();
         mKeyCaster = GluiMulticaster.remove( mKeyCaster, listener );
+        if( mDispatcher != null && prev != hasKeyListener() ) {
+            mDispatcher.firePropertyChange( this, PROP_HAS_KEY_LISTENER, true, false );
+        }
     }
 
-    public void addPaintListener( GPaintListener listener ) {
+    public synchronized void addPaintListener( GPaintListener listener ) {
         mPaintCaster = GluiMulticaster.add( mPaintCaster, listener );
     }
 
-    public void removePaintListener( GPaintListener listener ) {
+    public synchronized void removePaintListener( GPaintListener listener ) {
         mPaintCaster = GluiMulticaster.remove( mPaintCaster, listener );
     }
     
     
-    
-    public boolean hasKeyboardListener() {
+    public synchronized boolean hasKeyListener() {
         return mKeyCaster != null;
     }
     
-    public boolean hasMouseListener() {
+    public synchronized boolean hasMouseListener() {
         return mMouseCaster != null ||
                mMouseMotionCaster != null ||
                mMouseWheelCaster != null;
     }
     
-    public boolean requestFocus() {
-        if( !GToolkit.isKeyboardFocusable( this ) )
+    
+    public boolean hasFocus() {
+        return mHasFocus;
+    }
+    
+    public synchronized boolean requestFocus() {
+        if( mDispatcher == null || !GToolkit.isKeyboardFocusable( this ) )
             return false;
-
-        fireRequestFocus( this );
+                
+        mDispatcher.fireRequestFocus( this );
         return true;
     }
     
     public void transferFocusBackward() {
-        fireTransferFocusBackward( this );
+        GDispatcher d = mDispatcher;
+        if( d != null ) {
+            d.fireTransferFocusBackward( this );
+        }
     }
     
     public void transferFocusForward() {
-        fireTransferFocusForward( this );
+        GDispatcher d = mDispatcher;
+        if( d != null ) {
+            d.fireTransferFocusForward( this );
+        }
     }
     
-
-    public GComponent componentAt( int x, int y ) {
+    public void startModal() {
+        GDispatcher d = mDispatcher;
+        if( d != null ) {
+            d.firePushInputRoot( this );
+        }
+    }
+    
+    public void stopModal() {
+        GDispatcher d = mDispatcher;
+        if( d != null ) {
+            d.firePopInputRoot( this );
+        }
+    }
+    
+    
+    public synchronized GComponent componentAt( int x, int y ) {
         if( !contains( x, y ) )
             return null;
 
@@ -329,28 +402,28 @@ public class GPanel implements GComponent {
                 return ret;
             }
         }
-
+        
         return this;
     }
     
-    public GComponent visibleComponentAt( int x, int y ) {
-        if( !mVisible || !contains( x, y ) )
+    public synchronized GComponent displayedComponentAt( int x, int y ) {
+        if( !mDisplayed || !contains( x, y ) )
             return null;
-        
+
         int size = mChildren.size();
         while( size-- > 0 ) {
             GComponent child = mChildren.get( size );
-            GComponent ret   = child.visibleComponentAt( x - child.x(), y - child.y() );
+            GComponent ret   = child.displayedComponentAt( x - child.x(), y - child.y() );
             if( ret != null ) {
                 return ret;
             }
         }
-        
+
         return this;
     }
     
-    public GComponent mouseFocusableComponentAt( int x, int y ) {
-        if( !contains( x, y ) )
+    public synchronized GComponent mouseFocusableComponentAt( int x, int y ) {
+        if( !mDisplayed || !contains( x, y ) )
             return null;
         
         int size = mChildren.size();
@@ -365,55 +438,54 @@ public class GPanel implements GComponent {
         return GToolkit.isMouseFocusable( this ) ? this : null;
     }
     
-    
-    public void applyLayout() {
-        if( mNeedsLayout || mPerformingLayout )
+    public synchronized void applyLayout() {
+        if( mNeedsLayout || mLayout == null )
             return;
         
         mNeedsLayout = true;
-        fireLayoutRequest( this );
+        
+        if( mDispatcher != null ) {
+            mDispatcher.fireLayout( this );
+        }
     }
 
     public boolean needsLayout() {
         return mNeedsLayout;
     }
 
-    public void repaint() {
-        if( mNeedsPaint )
+    public synchronized void repaint() {
+        if( mNeedsPaint || mDispatcher == null )
             return;
 
         mNeedsPaint = true;
-        firePaintRequest( this );
     }
-
+    
     public boolean needsRepaint() {
         return mNeedsPaint;
     }
-
-
-    protected void paint( GGraphics g ) {
-        paintComponent( g );
-        paintChildren( g );
-    }
-
+    
+    
     protected void paintComponent( GGraphics g ) {
         GPaintListener c = mPaintCaster;
-        if( c != null )
+        if( c != null ) {
             c.paint( g );
+        }
     }
-
+    
     protected void paintChildren( GGraphics g ) {
         if( mChildren.isEmpty() )
             return;
-
+        
         GL gl = g.gl();
 
         for( GComponent p : mChildren ) {
-            prepareView( g, p );
-            p.processPaintEvent( g );
+            if( p.isDisplayed() ) {
+                prepareView( g, p );
+                p.processPaint( g );
+            }
         }
     }
-
+    
     protected void prepareView( GGraphics g, GComponent p ) {
         GL gl = g.gl();
 
@@ -440,38 +512,123 @@ public class GPanel implements GComponent {
     
     
     
-    public void setParent( GComponent pane ) {
-        mParent = pane;
-    }
+    public synchronized void treeProcessParentChanged( GDispatcher dispatcher, GComponent parent ) {
+        if( dispatcher == mDispatcher && parent == mParent )
+            return;
 
-    public void processLayoutEvent() {
-        mPerformingLayout = true;
-        GLayout m = mLayout;
         
-        Box b = ( mParent == null ? bounds() : mParent.bounds());
-        mAbsoluteBounds = Box.fromBounds( mX + b.x(), mY + b.y(), mW, mH );
+        GDispatcher out = dispatcher != null ? dispatcher : mDispatcher;
         
-        if( m != null )
-            m.layoutPane( this );
+        mDispatcher     = dispatcher;
+        mParent         = parent;
+        mAbsoluteBounds = null;
+        
+        // Notify ancestor has changed.
+        if( out != null && mAncestorCaster != null ) {
+            GAncestorEvent e = new GAncestorEvent( this, GAncestorEvent.ANCESTOR_CHANGED, parent );
+            out.fireAncestorEvent( e );
+        }
+        
+        updateDisplayed( out );
+        
+        mNeedsLayout = false;
+        mNeedsPaint  = false;
+        applyLayout();
+        
+        if( mDisplayed ) {
+            repaint();
+        }
+        
+        mDispatcher = dispatcher;
         
         if( !mChildren.isEmpty() ) {
-            for( GComponent c : mChildren ) {
-                c.processLayoutEvent();
+            for( GComponent c: mChildren ) {
+                c.treeProcessParentChanged( dispatcher, this );
+            }
+        }
+    }
+    
+    public synchronized void treeProcessAncestorMoved( GComponent source ) {
+        mAbsoluteBounds = null;
+    
+        if( mDispatcher != null ) {
+            if( source == this ) {
+                if( mComponentCaster != null ) {
+                    GComponentEvent e = new GComponentEvent( this, GComponentEvent.COMPONENT_MOVED );
+                    mDispatcher.fireComponentEvent( e );
+                }
+            } else if( mAncestorCaster != null ) {
+                GAncestorEvent e = new GAncestorEvent( this, GAncestorEvent.ANCESTOR_MOVED, source );
+                mDispatcher.fireAncestorEvent( e );
             }
         }
         
-        mPerformingLayout = false;
-        mNeedsLayout = false;
+        if( !mChildren.isEmpty() ) {
+            for( GComponent c: mChildren ) {
+                c.treeProcessAncestorMoved( source );
+            }
+        }
     }
-
-    public void processPaintEvent( GGraphics g ) {
+    
+    public synchronized void treeProcessAncestorResized( GComponent source ) {
+        mAbsoluteBounds = null;
+        
+        if( mDispatcher != null ) {
+            if( source == this ) {
+                if( mComponentCaster != null ) {
+                    GComponentEvent e = new GComponentEvent( this, GComponentEvent.COMPONENT_RESIZED );
+                    mDispatcher.fireComponentEvent( e );
+                }
+            } else if( mAncestorCaster != null ) {
+                GAncestorEvent e = new GAncestorEvent( this, GAncestorEvent.ANCESTOR_RESIZED, source );
+                mDispatcher.fireAncestorEvent( e );
+            }
+        } 
+        
+        if( !mChildren.isEmpty() ) {
+            for( GComponent c: mChildren ) {
+                c.treeProcessAncestorResized( source );
+            }
+        }
+    }
+    
+    public synchronized void treeProcessParentShown() {
+        if( updateDisplayed() && !mChildren.isEmpty() ) {
+            for( GComponent c: mChildren ) {
+                c.treeProcessParentShown();
+            }
+        }
+    }
+    
+    public synchronized void treeProcessParentHidden() {
+        if( updateDisplayed() && !mChildren.isEmpty() ) { 
+            for( GComponent c: mChildren ) {
+                c.treeProcessParentHidden();
+            }
+        }
+    }
+    
+    
+    public void processLayout() {
+        GLayout m;
+        
+        synchronized( this ) {
+            m = mLayout;
+            mNeedsLayout = false;
+        }
+        
+        if( m != null ) {
+            m.layoutPane( this );
+        }
+    }
+    
+    public void processPaint( GGraphics g ) {
+        if( !mDisplayed ) return;
         mNeedsPaint = false;
-        if( !mVisible )
-            return;
-
-        paint( g );
+        paintComponent( g );
+        paintChildren( g );
     }
-
+    
     public void processComponentEvent( GComponentEvent e ) {
         GComponentListener c = mComponentCaster;
         if( c == null )
@@ -495,7 +652,27 @@ public class GPanel implements GComponent {
             break;
         }
     }
-
+    
+    public void processAncestorEvent( GAncestorEvent e ) {
+        GAncestorListener c = mAncestorCaster;
+        if( c == null )
+            return;
+        
+        switch( e.id() ) {
+        case GAncestorEvent.ANCESTOR_CHANGED:
+            c.ancestorChanged( e );
+            break;
+            
+        case GAncestorEvent.ANCESTOR_MOVED:
+            c.ancestorMoved( e );
+            break;
+            
+        case GAncestorEvent.ANCESTOR_RESIZED:
+            c.ancestorResized( e );
+            break;
+        }
+    }
+    
     public void processFocusEvent( GFocusEvent e ) {
         GFocusListener f = mFocusCaster;
         
@@ -554,7 +731,7 @@ public class GPanel implements GComponent {
 
         e.consume();
     }
-
+    
     public void processMouseWheelEvent( GMouseWheelEvent e ) {
         GMouseWheelListener m = mMouseWheelCaster;
         if( m == null )
@@ -563,7 +740,7 @@ public class GPanel implements GComponent {
         m.mouseWheelMoved( e );
         e.consume();
     }
-
+    
     public void processKeyEvent( GKeyEvent e ) {
         GKeyListener m = mKeyCaster;
         if( m == null )
@@ -583,83 +760,32 @@ public class GPanel implements GComponent {
 
         e.consume();
     }
-
-
-
-    public void fireLayoutRequest( GComponent source ) {
-        if( mPerformingLayout ) {
-            return;
+    
+    
+    private synchronized boolean updateDisplayed() {
+        return updateDisplayed( mDispatcher );
+    }
+    
+    private boolean updateDisplayed( GDispatcher out ) {
+        boolean displayed = mDispatcher!= null &&
+                            mVisible &&
+                            ( mParent == null || mParent.isDisplayed() );
+        
+        if( mDisplayed == displayed )
+            return false;
+        
+        mDisplayed = displayed;
+        
+        if( out != null ) {
+            if( mComponentCaster != null ) {
+                int id = displayed ? GComponentEvent.COMPONENT_SHOWN : GComponentEvent.COMPONENT_HIDDEN;
+                out.fireComponentEvent( new GComponentEvent( this, id ) );
+            }
+            
+            out.firePropertyChange( this, PROP_DISPLAYED, !displayed, displayed );
         }
         
-        if( mParent != null ) {
-            mParent.fireLayoutRequest( source );
-        }
+        return true;
     }
-    
-    public void firePaintRequest( GComponent source ) {
-        if( mParent != null ) {
-            mParent.firePaintRequest( source );
-        }
-    }
-    
-    public void fireRequestFocus( GComponent source ) {
-        if( mParent != null ) {
-            mParent.fireRequestFocus( source );
-        }
-    }
-
-    public void fireTransferFocusBackward( GComponent source ) {
-        if( mParent != null ) {
-            mParent.fireTransferFocusBackward( source );
-        }
-    }
-
-    public void fireTransferFocusForward( GComponent source ) {
-        if( mParent != null ) {
-            mParent.fireTransferFocusForward( source );
-        }
-    }
-
-    public void firePushInputRoot( GComponent source ) {
-        if( mParent != null ) {
-            mParent.firePushInputRoot( source );
-        }
-    }
-
-    public void firePopInputRoot( GComponent source ) {
-        if( mParent != null ) {
-            mParent.firePopInputRoot( source );
-        }
-    }
-    
-    public void firePropertyChange( GComponent source, String prop, Object oldValue, Object newValue ) {
-        if( mParent != null ) {
-            mParent.firePropertyChange( source, prop, oldValue, newValue );
-        }
-    }
-    
-    public void postComponentEvent( GComponentEvent event ) {
-        if( mParent != null ) {
-            mParent.postComponentEvent( event );
-        }
-    }
-    
-    
-    private void notifyNewBounds( boolean moved, boolean resized ) {
-        // TODO: This isn't remotely proper;
-        // I just didn't feel like adding an event queue to GRootPane yet.
-        if( mComponentCaster == null ) {
-            return;
-        }
         
-        if( moved ) {
-            processComponentEvent( new GComponentEvent( this, GComponentEvent.COMPONENT_MOVED ) );
-        }
-
-        if( resized ) {
-            processComponentEvent( new GComponentEvent( this, GComponentEvent.COMPONENT_RESIZED ) );
-        }
-
-    }
-
 }

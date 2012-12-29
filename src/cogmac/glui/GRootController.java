@@ -4,9 +4,9 @@ package cogmac.glui;
 import java.awt.Component;
 
 import javax.media.opengl.*;
+
 import static javax.media.opengl.GL.*;
 
-import cogmac.glui.event.AwtEventTranslator;
 import cogmac.glui.text.FontManager;
 
 
@@ -38,23 +38,31 @@ public final class GRootController {
     }
     
     
-    
-    private final FontManager mFontManager;
-    private final InitNode mInit;
     private final GLCanvas mCanvas;
-    private final GRootPane mRoot;
+    private final InitNode mInit;
+    private final FontManager mFontManager;
+    private final Graphics mGraphics;
+    
+    private final EventQueue mQueue;
+    private final EventProcessor mProcessor;
+    private final GPanel mRoot;
     
     private Animator mAnimator;
     
     
     private GRootController( GLCapabilities glc, FontManager fontManager ) {
         mCanvas      = new GLCanvas( glc );
-        mFontManager = fontManager;
         mInit        = new InitNode( mCanvas );
+        mFontManager = fontManager == null ? new FontManager() : fontManager;
+        mGraphics    = new Graphics( mFontManager );
         
-        mCanvas.addGLEventListener(new GLEventHandler());
-        mRoot = new GRootPane( mCanvas, mFontManager );
-        new AwtEventTranslator( mCanvas, mRoot );
+        mRoot        = new GPanel();
+        mQueue  = new EventQueue( mRoot );
+        mProcessor   = new EventProcessor( mCanvas, mRoot );
+        mRoot.treeProcessParentChanged( mQueue, null );
+        
+        mCanvas.addGLEventListener( new GLEventHandler() );
+        new AwtEventTranslator( mCanvas, mProcessor );
     }
 
     
@@ -71,17 +79,18 @@ public final class GRootController {
         return mCanvas;
     }
 
-    public GRootPane rootPane() {
+    public GPanel rootPane() {
         return mRoot;
     }
     
-    public void startAnimator(double maxFps) {
-        synchronized(this) {
-            if(mAnimator != null)
+    public void startAnimator( double maxFps ) {
+        synchronized( this ) {
+            if( mAnimator != null )
                 return;
             
-            long micros = (long)(1000000.0 / maxFps); 
-            mAnimator = new Animator(mCanvas, micros);
+            mQueue.ignoreRepaints( true );
+            long micros = (long)( 1000000.0 / maxFps ); 
+            mAnimator = new Animator( mCanvas, micros );
             mAnimator.start();
         }
     }
@@ -93,6 +102,7 @@ public final class GRootController {
             
             mAnimator.stopAnimator();
             mAnimator = null;
+            mQueue.ignoreRepaints( false );
         }
     }
     
@@ -139,28 +149,98 @@ public final class GRootController {
     }
     
     
+    public void generateUpdates( GLAutoDrawable gld ) {
+        generateUpdates( gld, mRoot.absoluteBounds(), null );
+    }
+    
+    public void generateUpdates( GLAutoDrawable gld, Box contextViewport ) {
+        generateUpdates( gld, mRoot.absoluteBounds(), contextViewport );
+    }
+    
+    private void generateUpdates( GLAutoDrawable gld, Box bounds, Box contextViewport ) {
+        mQueue.processAllEvents( mProcessor );
+        
+        GL gl = gld.getGL();
+        
+        Graphics g = mGraphics;
+        g.mGld = gld;
+        g.mGl  = gl;
+        
+        if( contextViewport == null ) {
+            Box b = contextViewport = g.mContextViewport;
+            int w = gld.getWidth();
+            int h = gld.getHeight();
+            
+            if( b != null && b.x() == 0 && b.y() == 0 && b.width() == w && b.height() == h ) {
+                contextViewport = b;
+            } else {
+                contextViewport = g.mContextViewport = Box.fromBounds( 0, 0, w, h );
+            }
+            
+        } else {
+            g.mContextViewport = contextViewport;
+        }
+        
+        gl.glPushAttrib( GL_ALL_ATTRIB_BITS );
+
+        gl.glMatrixMode( GL_PROJECTION );
+        gl.glPushMatrix();
+        gl.glLoadIdentity();
+        gl.glOrtho( 0, bounds.maxX(), 0, bounds.maxY(), -1, 1 );
+
+        gl.glMatrixMode( GL_MODELVIEW );
+        gl.glPushMatrix();
+        gl.glLoadIdentity();
+        
+        gl.glDisable( GL_DEPTH_TEST );
+        gl.glDisable( GL_STENCIL_TEST );
+        gl.glEnable( GL_BLEND );
+        gl.glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+        gl.glEnable( GL_SCISSOR_TEST );
+        gl.glEnable( GL_ALPHA_TEST );
+        
+        gl.glScissor( bounds.x() - contextViewport.x(),
+                      bounds.y() - contextViewport.y(),
+                      bounds.width(),
+                      bounds.height() );
+
+        gl.glViewport( bounds.x() - contextViewport.x(),
+                       bounds.y() - contextViewport.y(),
+                       bounds.width(),
+                       bounds.height() );
+        
+        mRoot.processPaint( g );
+        
+        gl.glMatrixMode( GL_PROJECTION );
+        gl.glPopMatrix();
+        gl.glMatrixMode( GL_MODELVIEW );
+        gl.glPopMatrix();
+        gl.glPopAttrib();
+        
+    }
+    
+    
     
     private final class GLEventHandler implements GLEventListener {
 
-        public void init(GLAutoDrawable gld) {
-            mInit.init(gld);
+        public void init( GLAutoDrawable gld ) {
+            mInit.init( gld );
         }
 
-        public void reshape(GLAutoDrawable gld, int x, int y, int w, int h) {
+        public void reshape( GLAutoDrawable gld, int x, int y, int w, int h ) {
             mInit.reshape(gld, x, y, w, h);
             mRoot.bounds(x, y, w, h);
         }
         
-        public void display(GLAutoDrawable gld) {
-            mInit.push(gld.getGL());
-            mRoot.generateUpdates(gld);
-            mInit.pop(gld.getGL());
+        public void display( GLAutoDrawable gld ) {
+            mInit.push( gld.getGL() );
+            generateUpdates( gld );
+            mInit.pop( gld.getGL() );
         }
 
-        public void displayChanged(GLAutoDrawable gld, boolean arg1, boolean arg2) {}
+        public void displayChanged( GLAutoDrawable gld, boolean arg1, boolean arg2 ) {}
 
     }
-
     
     
     public final class InitNode {
@@ -334,8 +414,8 @@ public final class GRootController {
         }
         
     }
-
-
+    
+    
     private static class Animator extends Thread {
 
         private final GLCanvas mTarget;
@@ -344,7 +424,7 @@ public final class GRootController {
         private boolean mKill = false;
         
         
-        Animator(GLCanvas target, long minMicrosPerFrame) {
+        Animator( GLCanvas target, long minMicrosPerFrame ) {
             mTarget = target;
             mMinMillisPerFrame = minMicrosPerFrame / 1000L;
         }
@@ -381,6 +461,38 @@ public final class GRootController {
         }
         
     }
+    
+    
+    private static final class Graphics implements GGraphics {
 
+        final FontManager mFontManager;
+        
+        GLAutoDrawable mGld = null;
+        GL mGl  = null;
+        Box mContextViewport = null;
+        
+        
+        Graphics( FontManager fontManager ) {
+            mFontManager = fontManager;
+        }
+
+
+        public GL gl() {
+            return mGl;
+        }
+
+        public FontManager fontManager() {
+            return mFontManager;
+        }
+
+        public GLAutoDrawable drawable() {
+            return mGld;
+        }
+
+        public Box contextViewport() {
+            return mContextViewport;
+        }
+
+    }
     
 }
