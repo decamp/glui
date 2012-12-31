@@ -13,7 +13,7 @@ public class GChildOrderTraversalPolicy implements GFocusTraversalPolicy {
         if( GToolkit.isKeyboardFocusable( root ) )
             return root;
 
-        for( GComponent c : root.getChildren() ) {
+        for( GComponent c : root.children() ) {
             GComponent ret = getFirstComponent( c );
             if( ret != null ) {
                 return ret;
@@ -25,7 +25,7 @@ public class GChildOrderTraversalPolicy implements GFocusTraversalPolicy {
 
 
     public GComponent getLastComponent( GComponent root ) {
-        List<GComponent> children = root.getChildren();
+        List<GComponent> children = root.children();
 
         for( int i = children.size() - 1; i >= 0; i-- ) {
             GComponent ret = getLastComponent( children.get( i ) );
@@ -46,7 +46,7 @@ public class GChildOrderTraversalPolicy implements GFocusTraversalPolicy {
     public GComponent getComponentAfter( GComponent root, GComponent comp ) {
 
         // Check children.
-        for( GComponent c : comp.getChildren() ) {
+        for( GComponent c : comp.children() ) {
             GComponent ret = getFirstComponent( c );
             if( ret != null ) {
                 return ret;
@@ -57,7 +57,7 @@ public class GChildOrderTraversalPolicy implements GFocusTraversalPolicy {
         if( comp == root )
             return GToolkit.isKeyboardFocusable( root ) ? root : null;
 
-        GComponent parent = comp.getParent();
+        GComponent parent = comp.parent();
         if( parent == null )
             return null;
 
@@ -75,7 +75,7 @@ public class GChildOrderTraversalPolicy implements GFocusTraversalPolicy {
 
         // Check if possible to get parent.
         if( comp != root ) {
-            GComponent parent = comp.getParent();
+            GComponent parent = comp.parent();
             if( parent == null )
                 return null;
 
@@ -93,7 +93,7 @@ public class GChildOrderTraversalPolicy implements GFocusTraversalPolicy {
     private GComponent getComponentAfter( GComponent root, GComponent comp, GComponent start ) {
         while( true ) {
             // Check children.
-            Iterator<GComponent> iter = comp.getChildren().iterator();
+            Iterator<GComponent> iter = comp.children().iterator();
 
             // Find starting position.
             if( start != null ) {
@@ -116,7 +116,7 @@ public class GChildOrderTraversalPolicy implements GFocusTraversalPolicy {
             if( comp == root )
                 return null;
 
-            GComponent parent = comp.getParent();
+            GComponent parent = comp.parent();
             if( parent == null )
                 return null;
 
@@ -129,7 +129,7 @@ public class GChildOrderTraversalPolicy implements GFocusTraversalPolicy {
     private GComponent getComponentBefore( GComponent root, GComponent comp, GComponent start ) {
         while( true ) {
             // Check children.
-            List<GComponent> children = comp.getChildren();
+            List<GComponent> children = comp.children();
             int i = children.size();
 
             // Find starting position.
@@ -157,7 +157,7 @@ public class GChildOrderTraversalPolicy implements GFocusTraversalPolicy {
             if( comp == root )
                 return null;
 
-            GComponent parent = comp.getParent();
+            GComponent parent = comp.parent();
             if( parent == null )
                 return null;
 

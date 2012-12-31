@@ -16,12 +16,11 @@ public interface GComponent {
     public static final String PROP_HAS_MOUSE_LISTENER = "hasMouseListener";
     public static final String PROP_HAS_KEY_LISTENER   = "hasKeyListener";
     
+    public GComponent parent();
+    public List<GComponent> children();
     public void addChild( GComponent pane );
     public void removeChild( GComponent pane );
     public void clearChildren();
-    public List<GComponent> getChildren();
-    public void setLayout( GLayout layout );
-    public GComponent getParent();
     
     public Box bounds();
     public Box absoluteBounds();
@@ -80,17 +79,19 @@ public interface GComponent {
     public void startModal();
     public void stopModal();
     
+    public void setLayout( GLayout layout );
+    public void applyLayout();
+    public boolean needsLayout();
+    
     public GComponent componentAt( int x, int y );
     public GComponent displayedComponentAt( int x, int y );
     public GComponent mouseFocusableComponentAt( int x, int y );
     
-    public void applyLayout();
-    public boolean needsLayout();
     public void repaint();
     public boolean needsRepaint();
     
     /**
-     * Methods that should only be called by the parent component.
+     * Methods that should only be called by parent component.
      */
     public void treeProcessParentChanged( GDispatcher dispatcher, GComponent parent );
     public void treeProcessAncestorMoved( GComponent source );
@@ -98,6 +99,9 @@ public interface GComponent {
     public void treeProcessParentShown();
     public void treeProcessParentHidden();
     
+    /**
+     * Methods that should only be called by dispatcher.
+     */
     public void processLayout();
     public void processPaint( GGraphics g );
     public void processComponentEvent( GComponentEvent e );

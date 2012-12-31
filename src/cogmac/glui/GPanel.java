@@ -82,7 +82,7 @@ public class GPanel implements GComponent {
         applyLayout();
     }
     
-    public List<GComponent> getChildren() {
+    public List<GComponent> children() {
         return mSafeChildren;
     }
 
@@ -90,7 +90,7 @@ public class GPanel implements GComponent {
         mLayout = layout;
     }
 
-    public GComponent getParent() {
+    public GComponent parent() {
         return mParent;
     }
     

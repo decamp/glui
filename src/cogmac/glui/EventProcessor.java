@@ -597,7 +597,7 @@ class EventProcessor {
             if( comp == root )
                 return true;
 
-            comp = comp.getParent();
+            comp = comp.parent();
         }
 
         return false;
