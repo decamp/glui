@@ -102,7 +102,7 @@ public interface GComponent {
     /**
      * Methods that should only be called by dispatcher.
      */
-    public void processLayout();
+    public void treeProcessLayout();
     public void processPaint( GGraphics g );
     public void processComponentEvent( GComponentEvent e );
     public void processAncestorEvent( GAncestorEvent e );

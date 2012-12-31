@@ -172,7 +172,7 @@ class EventProcessor {
     
     
     public void processLayout( GComponent source ) {
-        source.processLayout();
+        source.treeProcessLayout();
     }
     
     

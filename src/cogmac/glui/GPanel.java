@@ -28,9 +28,9 @@ public class GPanel implements GComponent {
     
     private int mX = 0;
     private int mY = 0;
-    private int mW = 0;
-    private int mH = 0;
-    private Box mAbsoluteBounds = Box.fromBounds( 0, 0, 0, 0 );
+    private int mW = 1;
+    private int mH = 1;
+    private Box mAbsoluteBounds = Box.fromBounds( 0, 0, 1, 1 );
     
     private GColor mForeground = DEFAULT_FOREGROUND;
     private GColor mBackground = DEFAULT_BACKGROUND;
@@ -609,7 +609,7 @@ public class GPanel implements GComponent {
     }
     
     
-    public void processLayout() {
+    public void treeProcessLayout() {
         GLayout m;
         
         synchronized( this ) {
@@ -619,6 +619,12 @@ public class GPanel implements GComponent {
         
         if( m != null ) {
             m.layoutPane( this );
+        }
+        
+        synchronized( this ) {
+            for( GComponent p: mChildren ) {
+                p.treeProcessLayout();
+            }
         }
     }
     
