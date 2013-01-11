@@ -9,13 +9,25 @@ import java.util.*;
 
 
 /**
+ * TODO: Some of these methods may be more efficient once
+ * the JVM has more fully integrated escape analysis. At 
+ * that point, the use of alternate implementations for 
+ * CharSequence and char arrays may be less optimal than
+ * using a single implementation and wrapping parameters
+ * where necessary, which would reduce the amount of code.
+ * <p>
+ * Also, it may eventually be necessary to produce a separate
+ * FontMetrics implementation in order to handle kerning more
+ * efficiently. Right now, kerning support in this library
+ * is pretty limited for pfa and pfb fonts, and it's hard to
+ * tell what AWT is actually doing with TT and OTF fonts. 
+ * 
  * @author decamp
  */
 public class FontUtil {
 
     private static final BufferedImage METRIC_IMAGE = new BufferedImage( 1, 1, BufferedImage.TYPE_INT_ARGB );
     private static final Pattern WORD_PAT           = Pattern.compile( "\\S++" );
-    
     
 
     public static FontMetrics metrics( Font font ) {
@@ -83,9 +95,129 @@ public class FontUtil {
 
         return width;
     }
-
-
-
+    
+    
+    /**
+     * Determines how many characters may be laid in sequence 
+     * before reaching a set width.
+     * 
+     * @param metrics   Font metrics used for layout..
+     * @param chars     Input array of chars.
+     * @param off       Offset into array of chars.
+     * @param len       Number of chars in input.
+     * @param maxWidth  Maximum width for layout.
+     * @param outWidth  <code>outWidth[0]</code> will hold the exact width
+     *                  the exact width of the fitted characters on return.
+     *                  May be <code>null</code>.
+     *                  
+     * @return The number of characters that fit within the specified width.
+     */
+    public static int findWidth( FontMetrics metrics, 
+                                 char[] chars, 
+                                 int off, 
+                                 int len, 
+                                 float maxWidth, 
+                                 float[] outWidth ) 
+    {
+        if( len == 0 ) {
+            if( outWidth != null ) { 
+                outWidth[0] = 0f;
+            }
+            return 0;
+        }
+        
+        float width = metrics.charWidth( chars[off] );
+        if( width > maxWidth ) {
+            if( outWidth != null ) {
+                outWidth[0] = 0f;
+            }
+            return 0;
+        }
+        
+        float prevAdvance = width;
+        
+        for( int i = 1; i < len; i++ ) {
+            float advance = metrics.charsWidth( chars, off + i - 1, 2 );
+            prevAdvance   = advance - prevAdvance;
+            width += prevAdvance;
+            
+            if( width > maxWidth ) {
+                if( outWidth != null ) {
+                    outWidth[0] = width - prevAdvance;
+                }
+                return i;
+            }
+        }
+        
+        if( outWidth != null ) {
+            outWidth[0] = width;
+        }
+        return len;
+    }
+    
+    
+    /**
+     * Determines how many characters may be laid in sequence 
+     * before reaching a set width.
+     * 
+     * @param metrics   Font metrics used for layout..
+     * @param seq       Input CharSequence to layout.
+     * @param off       Offset into seq where input starts.
+     * @param len       Number of chars in input.
+     * @param maxWidth  Maximum width for layout.
+     * @param outWidth  <code>outWidth[0]</code> will hold the exact width
+     *                  the exact width of the fitted characters on return.
+     *                  May be <code>null</code>.
+     *                  
+     * @return The number of characters that fit within the specified width.
+     */
+    public static int findWidth( FontMetrics metrics, 
+                                 CharSequence seq, 
+                                 int off, 
+                                 int len, 
+                                 float maxWidth, 
+                                 float[] outWidth )
+    {
+        if( len == 0 ) {
+            if( outWidth != null ) {
+                outWidth[0] = 0f;
+            }
+            return 0;
+        }
+        
+        char[] arr = { 0, seq.charAt( off ) };
+        float width = metrics.charsWidth( arr, 1, 1 );
+        if( width > maxWidth ) {
+            if( outWidth[0] != 0f ) {
+                outWidth[0] = 0f;
+            }
+            return 0;
+        }
+        
+        float prevAdvance = width;
+        
+        for( int i = 1; i < len; i++ ) {
+            arr[0] = arr[1];
+            arr[1] = seq.charAt( i + off );
+            float advance = metrics.charsWidth( arr, 0, 2 );
+            prevAdvance   = advance - prevAdvance;
+            width += prevAdvance;
+            
+            if( width > maxWidth ) {
+                if( outWidth != null ) {
+                    outWidth[0] = width - prevAdvance;
+                }
+                return i;
+            }
+        }
+        
+        if( outWidth != null ) {
+            outWidth[0] = width;
+        }
+        return len;
+    }
+    
+    
     /**
      * Computes the right-edges of every character in a string. This is much
      * more efficient than calling charsWidth() on many substrings to find
