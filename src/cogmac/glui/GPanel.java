@@ -21,8 +21,8 @@ public class GPanel implements GComponent {
     
     private GDispatcher mDispatcher = null; 
     private GComponent mParent      = null;
-    private final List<GComponent> mChildren     = new ArrayList<GComponent>();
-    private final List<GComponent> mSafeChildren = Collections.unmodifiableList( mChildren );
+    private final List<GComponent> mChildren;
+    private final List<GComponent> mSafeChildren;
     
     private GLayout mLayout = null;
     
@@ -54,20 +54,30 @@ public class GPanel implements GComponent {
     private GMouseWheelListener mMouseWheelCaster = null;
     private GKeyListener mKeyCaster = null;
     
+    
+    public GPanel() {
+        this( new ArrayList<GComponent>() );
+    }
+    
+    
+    protected GPanel( List<GComponent> children ) {
+        mChildren = children;
+        mSafeChildren = Collections.unmodifiableList( mChildren );
+    }
+    
+    
 
     public synchronized void addChild( GComponent child ) {
         if( mChildren.contains( child ) )
             return;
         
         mChildren.add( child );
-        child.treeProcessParentChanged( mDispatcher, this );
-        applyLayout();
+        childAdded( child );
     }
     
     public synchronized void removeChild( GComponent child ) {
         if( mChildren.remove( child ) ) {
-            child.treeProcessParentChanged( null, null );
-            applyLayout();
+            childRemoved( child );
         }
     }
     
@@ -75,11 +85,11 @@ public class GPanel implements GComponent {
         if( mChildren.isEmpty() )
             return;
         
-        for( GComponent p : mChildren )
-            p.treeProcessParentChanged( null, null );
+        for( GComponent p : mChildren ) {
+            childRemoved( p );
+        }
         
         mChildren.clear();
-        applyLayout();
     }
     
     public List<GComponent> children() {
@@ -465,53 +475,6 @@ public class GPanel implements GComponent {
     }
     
     
-    protected void paintComponent( GGraphics g ) {
-        GPaintListener c = mPaintCaster;
-        if( c != null ) {
-            c.paint( g );
-        }
-    }
-    
-    protected void paintChildren( GGraphics g ) {
-        if( mChildren.isEmpty() )
-            return;
-        
-        GL gl = g.gl();
-
-        for( GComponent p : mChildren ) {
-            if( p.isDisplayed() ) {
-                prepareView( g, p );
-                p.processPaint( g );
-            }
-        }
-    }
-    
-    protected void prepareView( GGraphics g, GComponent p ) {
-        GL gl = g.gl();
-
-        Box b = p.absoluteBounds();
-        Box viewport = g.contextViewport();
-
-        int x = b.x() - viewport.x();
-        int y = b.y() - viewport.y();
-        int w = b.width();
-        int h = b.height();
-
-        gl.glMatrixMode( GL_PROJECTION );
-        gl.glLoadIdentity();
-        gl.glOrtho( 0, w, 0, h, -1, 1 );
-        gl.glMatrixMode( GL_MODELVIEW );
-        gl.glLoadIdentity();
-
-        // gl.glTranslated(b.minX(), b.minY(), 0.0);
-        // gl.glViewport((int)b.minX(), (int)b.minY(), (int)b.spanX(),
-        // (int)b.spanY());
-        gl.glViewport( x, y, w, h );
-        // gl.glScissor(x, y, w, h);
-    }
-    
-    
-    
     public synchronized void treeProcessParentChanged( GDispatcher dispatcher, GComponent parent ) {
         if( dispatcher == mDispatcher && parent == mParent )
             return;
@@ -765,6 +728,64 @@ public class GPanel implements GComponent {
         }
 
         e.consume();
+    }
+    
+    
+    
+    
+    protected void paintComponent( GGraphics g ) {
+        GPaintListener c = mPaintCaster;
+        if( c != null ) {
+            c.paint( g );
+        }
+    }
+    
+    protected void paintChildren( GGraphics g ) {
+        if( mChildren.isEmpty() )
+            return;
+        
+        GL gl = g.gl();
+
+        for( GComponent p : mChildren ) {
+            if( p.isDisplayed() ) {
+                prepareView( g, p );
+                p.processPaint( g );
+            }
+        }
+    }
+    
+    protected void prepareView( GGraphics g, GComponent p ) {
+        GL gl = g.gl();
+
+        Box b = p.absoluteBounds();
+        Box viewport = g.contextViewport();
+
+        int x = b.x() - viewport.x();
+        int y = b.y() - viewport.y();
+        int w = b.width();
+        int h = b.height();
+
+        gl.glMatrixMode( GL_PROJECTION );
+        gl.glLoadIdentity();
+        gl.glOrtho( 0, w, 0, h, -1, 1 );
+        gl.glMatrixMode( GL_MODELVIEW );
+        gl.glLoadIdentity();
+
+        // gl.glTranslated(b.minX(), b.minY(), 0.0);
+        // gl.glViewport((int)b.minX(), (int)b.minY(), (int)b.spanX(),
+        // (int)b.spanY());
+        gl.glViewport( x, y, w, h );
+        // gl.glScissor(x, y, w, h);
+    }
+    
+    protected void childAdded( GComponent child ) {
+        child.treeProcessParentChanged( mDispatcher, this );
+        applyLayout();        
+    }
+    
+    protected void childRemoved( GComponent child ) {
+        child.treeProcessParentChanged( null, null );
+        applyLayout();
     }
     
     

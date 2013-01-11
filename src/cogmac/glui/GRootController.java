@@ -45,7 +45,7 @@ public final class GRootController {
     
     private final EventQueue mQueue;
     private final EventProcessor mProcessor;
-    private final GPanel mRoot;
+    private final GLayeredPanel mRoot;
     
     private Animator mAnimator;
     
@@ -56,8 +56,8 @@ public final class GRootController {
         mFontManager = fontManager == null ? new FontManager() : fontManager;
         mGraphics    = new Graphics( mFontManager );
         
-        mRoot        = new GPanel();
-        mQueue  = new EventQueue( mRoot );
+        mRoot        = new GLayeredPanel();
+        mQueue       = new EventQueue( mRoot );
         mProcessor   = new EventProcessor( mCanvas, mRoot );
         mRoot.treeProcessParentChanged( mQueue, null );
         
@@ -79,7 +79,7 @@ public final class GRootController {
         return mCanvas;
     }
 
-    public GPanel rootPane() {
+    public GLayeredPanel rootPane() {
         return mRoot;
     }
     
