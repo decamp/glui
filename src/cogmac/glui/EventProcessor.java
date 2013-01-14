@@ -314,12 +314,14 @@ class EventProcessor {
             mMouseButtonFocus = null;
             mMouseClickFocus  = null;
         }
-
-        focus = mMouseLocation;
-
-        if( focus == null || ( !GToolkit.isMouseFocusable( focus ) || !isChild( root, focus ) ) ) {
-            initMouseLocation();
-        }
+        
+        initMouseLocation();
+        
+        //focus = mMouseLocation;
+        //
+        //if( focus == null || ( !GToolkit.isMouseFocusable( focus ) || !isChild( root, focus ) ) ) {
+        //    initMouseLocation();
+        //}
     }
     
     

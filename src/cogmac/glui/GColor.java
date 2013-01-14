@@ -10,19 +10,21 @@ import static javax.media.opengl.GL.*;
  */
 public class GColor {
 
-    public static final GColor BLACK      = new GColor(0f,0f,0f);
-    public static final GColor BLUE       = new GColor(Color.BLUE);
-    public static final GColor CYAN       = new GColor(Color.CYAN);
-    public static final GColor DARK_GRAY  = new GColor(Color.DARK_GRAY);
-    public static final GColor GRAY       = new GColor(Color.GRAY);
-    public static final GColor GREEN      = new GColor(Color.GREEN);
-    public static final GColor LIGHT_GRAY = new GColor(Color.LIGHT_GRAY);
-    public static final GColor MAGENTA    = new GColor(Color.MAGENTA);
-    public static final GColor ORANGE     = new GColor(Color.ORANGE);
-    public static final GColor PINK       = new GColor(Color.PINK);
-    public static final GColor RED        = new GColor(Color.RED);
-    public static final GColor WHITE      = new GColor(1f,1f,1f);
-    public static final GColor YELLOW     = new GColor(Color.YELLOW);
+    public static final GColor BLACK       = new GColor(0f,0f,0f);
+    public static final GColor BLUE        = new GColor(Color.BLUE);
+    public static final GColor CYAN        = new GColor(Color.CYAN);
+    public static final GColor DARK_GRAY   = new GColor(Color.DARK_GRAY);
+    public static final GColor GRAY        = new GColor(Color.GRAY);
+    public static final GColor GREEN       = new GColor(Color.GREEN);
+    public static final GColor LIGHT_GRAY  = new GColor(Color.LIGHT_GRAY);
+    public static final GColor MAGENTA     = new GColor(Color.MAGENTA);
+    public static final GColor ORANGE      = new GColor(Color.ORANGE);
+    public static final GColor PINK        = new GColor(Color.PINK);
+    public static final GColor RED         = new GColor(Color.RED);
+    public static final GColor WHITE       = new GColor(1f,1f,1f);
+    public static final GColor YELLOW      = new GColor(Color.YELLOW);
+    public static final GColor CLEAR_WHITE = new GColor( 1f, 1f, 1f, 0f );
+    public static final GColor CLEAR_BLACK = new GColor( 0f, 0f, 0f, 1f );
     
     
     public static GColor fromCurrent(GL gl) {
@@ -73,10 +75,6 @@ public class GColor {
     }
     
     public static GColor fromHsba(float hue, float saturation, float brightness, float alpha) {
-        int r = 0;
-        int g = 0;
-        int b = 0;
-        
         if(saturation == 0)
             return new GColor(brightness, brightness, brightness, alpha);
         

@@ -38,8 +38,8 @@ public class GLayeredPanel extends GPanel {
             return;
         
         int idx = 0;
-        
-        while( idx < mLayers.size() ) {
+    
+        for( ; idx < mLayers.size(); idx++ ) {
             if( mLayers.get( idx ).intValue() > layer ) {
                 break;
             }
