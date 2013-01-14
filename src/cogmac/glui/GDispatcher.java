@@ -16,4 +16,5 @@ public interface GDispatcher {
     
     public void firePropertyChange( GComponent source, String prop, Object oldValue, Object newValue );
         
+    public void fireRunnable( Runnable run );
 }

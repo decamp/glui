@@ -90,6 +90,8 @@ public interface GComponent {
     public void repaint();
     public boolean needsRepaint();
     
+    public GDispatcher dispatcher();
+    
     /**
      * Methods that should only be called by parent component.
      */

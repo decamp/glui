@@ -131,6 +131,14 @@ class EventQueue implements GDispatcher {
         mQueues[PRIORITY_OTHER].offer( item );
     }
     
+    public synchronized void fireRunnable( Runnable r ) {
+        Item item = getItem();
+        item.mObject1 = r;
+        item.mCall    = PROCESS_RUN;
+        mQueues[PRIORITY_OTHER].offer( item );
+    }
+    
+    
     
     boolean processAllEvents( EventProcessor processor ) {
         Item item   = null;
@@ -312,5 +320,12 @@ class EventQueue implements GDispatcher {
             e.source().processAncestorEvent( e );
         }
     };
+    
+    private static final Call PROCESS_RUN = new Call() {
+        public void call( EventProcessor processor, Item item ) {
+            ((Runnable)item.mObject1).run();
+        }
+    };
+    
     
 }

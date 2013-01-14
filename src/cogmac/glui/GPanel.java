@@ -473,6 +473,10 @@ public class GPanel implements GComponent {
     public boolean needsRepaint() {
         return mNeedsPaint;
     }
+
+    public GDispatcher dispatcher() {
+        return mDispatcher;
+    }
     
     
     public synchronized void treeProcessParentChanged( GDispatcher dispatcher, GComponent parent ) {
