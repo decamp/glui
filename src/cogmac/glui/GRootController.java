@@ -184,12 +184,10 @@ public final class GRootController {
         gl.glPushAttrib( GL_ALL_ATTRIB_BITS );
 
         gl.glMatrixMode( GL_PROJECTION );
-        gl.glPushMatrix();
         gl.glLoadIdentity();
         gl.glOrtho( 0, bounds.maxX(), 0, bounds.maxY(), -1, 1 );
 
         gl.glMatrixMode( GL_MODELVIEW );
-        gl.glPushMatrix();
         gl.glLoadIdentity();
         
         gl.glDisable( GL_DEPTH_TEST );
@@ -211,10 +209,6 @@ public final class GRootController {
         
         mRoot.processPaint( g );
         
-        gl.glMatrixMode( GL_PROJECTION );
-        gl.glPopMatrix();
-        gl.glMatrixMode( GL_MODELVIEW );
-        gl.glPopMatrix();
         gl.glPopAttrib();
         
     }
