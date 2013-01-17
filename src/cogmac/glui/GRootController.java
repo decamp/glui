@@ -193,7 +193,7 @@ public final class GRootController {
         gl.glDisable( GL_DEPTH_TEST );
         gl.glDisable( GL_STENCIL_TEST );
         gl.glEnable( GL_BLEND );
-        gl.glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+        gl.glBlendFuncSeparate( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
         gl.glEnable( GL_SCISSOR_TEST );
         gl.glEnable( GL_ALPHA_TEST );
         
@@ -334,7 +334,7 @@ public final class GRootController {
             updateAutoFlush();
             
             GL gl = gld.getGL();
-            gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            gl.glBlendFuncSeparate( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
             gl.glEnable(GL_BLEND);
             
             gl.glDepthFunc(GL_LESS);
