@@ -64,7 +64,7 @@ public class FontUtil {
     public static float charsWidth( FontMetrics metrics, CharSequence seq, int off, int len ) {
         int ret = 0;
         for( int i = 0; i < len; i++ ) {
-            ret += metrics.charWidth( seq.charAt( off + len ) );
+            ret += metrics.charWidth( seq.charAt( i + off ) );
         }
         return ret;
         
@@ -95,7 +95,7 @@ public class FontUtil {
     public static float charsWidth( FontMetrics metrics, char[] chars, int off, int len ) {
         int ret = 0;
         for( int i = 0; i < len; i++ ) {
-            ret += metrics.charWidth( chars[i+off] );
+            ret += metrics.charWidth( chars[i + off] );
         }
         return ret;
         
