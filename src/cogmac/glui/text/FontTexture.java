@@ -4,7 +4,6 @@ import java.awt.*;
 import java.awt.font.FontRenderContext;
 import java.awt.image.*;
 import java.nio.*;
-import java.util.*;
 
 import javax.media.opengl.GL;
 import static javax.media.opengl.GL.*;
@@ -42,41 +41,49 @@ public class FontTexture {
     
     private final Font              mFont;
     private final FontMetrics       mMetrics;
-
+    private final GlyphMap          mGlyphs;
     private final ImageTextureNode  mTexture;
-    private final Glyph[]           mGlyphs       = Glyph.newTable();
-    private final int[]             mBlendRevert  = { 0 };
-
+    
+    private final int[]             mBlendRevert = { 0 };
+    
 
     public FontTexture( Font font ) {
+        this( font, CharSet.DEFAULT );
+    }
+    
+    
+    public FontTexture( Font font, CharSet chars ) {
         mFont    = font;
         mMetrics = FontUtil.metrics( font );
+        mGlyphs  = GlyphMaps.newGlyphMap( chars );
         
-        int s = 256;
-        FontRenderContext context = FontUtil.renderContext();
+        int dim = 256;
+        FontRenderContext context = mMetrics.getFontRenderContext();
         
-        // Brute force size determination.  Whatevs.  
-        while( !layoutGlyphs( context, s, s, null ) ) {
-            s <<= 1;
-
-            if( s > 1024 * 4 ) {
+        computeGlyphSizes( mMetrics, 1, mGlyphs );
+        
+        // Brute force size determination.  Whatevs.
+        while( !layoutGlyphs( mMetrics, dim, dim, 1, mGlyphs, null ) ) {
+            dim <<= 1;
+            if( dim > 1024 * 4 ) {
                 throw new InstantiationError( "Font size too large for memory: " + mFont.getSize() );
             }
         }
         
-        BufferedImage im = new BufferedImage( s, s, BufferedImage.TYPE_BYTE_GRAY );
-
+        BufferedImage im = new BufferedImage( dim, dim, BufferedImage.TYPE_BYTE_GRAY );
         Graphics2D g = (Graphics2D)im.getGraphics();
         g.setRenderingHint( RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON );
         g.setFont( mFont );
         g.setBackground( Color.BLACK );
-        g.clearRect( 0, 0, s, s );
+        g.clearRect( 0, 0, dim, dim );
         g.setColor( Color.WHITE );
         
-        layoutGlyphs( g.getFontRenderContext(), s, s, g );
+        layoutGlyphs( mMetrics, dim, dim, 1, mGlyphs, g );
+        mGlyphs.optimize();
         
+        //ImagePanel.showImage( im );
         ByteBuffer buf = bufferGrayscale( im );
-        mTexture       = new ImageTextureNode( buf, im.getWidth(), im.getHeight() );
+        mTexture = new ImageTextureNode( buf, im.getWidth(), im.getHeight() );
     }
 
 
@@ -184,14 +191,15 @@ public class FontTexture {
 
     
     public float getCharWidth( char c ) {
-        return Glyph.tableGet( mGlyphs, c ).mAdvance;
+        return mGlyphs.get( c ).mAdvance;
     }
 
     /**
      * Computes width of sequence of characters. Because FontTexture
-     * precomputes kerning tables for each glyph, this is probably
-     * faster than using FontUtil.charsWidth(), and accounts for
-     * any glyphs that the FontTexture may have failed to rasterize.
+     * precomputes sizes, this is probably faster than using 
+     * FontUtil.charsWidth(), and accounts for any glyphs that the 
+     * FontTexture may have failed to rasterize. It also handles
+     * newlines and returns max length of any line.
      * 
      * @param chars
      * @param off
@@ -200,37 +208,27 @@ public class FontTexture {
      */
     public float getCharsWidth( char[] chars, int off, int len ) {
         float maxWidth = 0f;
-        Glyph prev     = null;
-
-        float width = 0f;
+        float width    = 0f;
         
         for( int i = 0; i < len; i++ ) {
             char c = chars[i + off];
-
+            
             if( c == '\n' ) {
                 if( width > maxWidth ) {
                     maxWidth = width;
                 }
-
                 width = 0f;
-                prev  = null;
                 continue;
             }
-
-            Glyph g = Glyph.tableGet( mGlyphs, c );
+            
+            Glyph g = mGlyphs.get( c );
             width += g.mAdvance;
-            
-            if( prev != null ) {
-                width += prev.getKern( g.mChar );
-            }
-            
-            prev = g;
         }
         
         if( width > maxWidth ) {
             maxWidth = width;
         }
-
+        
         return maxWidth;
     }
     
@@ -246,31 +244,21 @@ public class FontTexture {
     public float getCharsWidth( CharSequence chars ) {
         final int len  = chars.length();
         float maxWidth = 0f;
-        Glyph prev     = null;
-
-        float width = 0f;
+        float width    = 0f;
 
         for( int i = 0; i < len; i++ ) {
             char c = chars.charAt( i );
-
             if( c == '\n' ) {
                 if( width > maxWidth ) {
                     maxWidth = width;
                 }
 
                 width = 0f;
-                prev  = null;
                 continue;
             }
 
-            Glyph g = Glyph.tableGet( mGlyphs, c );
+            Glyph g = mGlyphs.get( c );
             width += g.mAdvance;
-            
-            if( prev != null ) {
-                width += prev.getKern( g.mChar );
-            }
-            
-            prev = g;
         }
         
         if( width > maxWidth ) {
@@ -318,9 +306,8 @@ public class FontTexture {
                              int off,
                              int len ) 
     {
-        float xx        = x;
-        float yy        = y;
-        Glyph prevGlyph = null;
+        float xx = x;
+        float yy = y;
         
         gl.glBegin( GL_QUADS );
 
@@ -330,34 +317,27 @@ public class FontTexture {
             if( c == '\n' ) {
                 xx = x;
                 yy -= mMetrics.getHeight();
-                prevGlyph = null;
                 continue;
             }
             
-            Glyph g = Glyph.tableGet( mGlyphs, c );
+            Glyph g = mGlyphs.get( c );
             
-            if( prevGlyph != null ) {
-                xx += prevGlyph.mAdvance + prevGlyph.getKern( g.mChar );
-            }
-
-            gl.glTexCoord2f( g.mU0, g.mV0 );
+            gl.glTexCoord2f( g.mS0, g.mT0 );
             gl.glVertex3f( g.mX0 + xx, g.mY0 + yy, z );
 
-            gl.glTexCoord2f( g.mU1, g.mV0 );
+            gl.glTexCoord2f( g.mS1, g.mT0 );
             gl.glVertex3f( g.mX1 + xx, g.mY0 + yy, z );
             
-            gl.glTexCoord2f( g.mU1, g.mV1 );
+            gl.glTexCoord2f( g.mS1, g.mT1 );
             gl.glVertex3f( g.mX1 + xx, g.mY1 + yy, z );
             
-            gl.glTexCoord2f( g.mU0, g.mV1 );
+            gl.glTexCoord2f( g.mS0, g.mT1 );
             gl.glVertex3f( g.mX0 + xx, g.mY1 + yy, z );
             
-            prevGlyph = g;
+            xx += g.mAdvance;
         }
 
         gl.glEnd();
-
-        
     }
     
     /**
@@ -385,12 +365,9 @@ public class FontTexture {
      * @param chars
      */
     public void renderChars( GL gl, float x, float y, float z, CharSequence chars ) {
-        
         final int len = chars.length();
-        
-        float xx        = x;
-        float yy        = y;
-        Glyph prevGlyph = null;
+        float xx = x;
+        float yy = y;
         
         gl.glBegin( GL_QUADS );
 
@@ -400,33 +377,27 @@ public class FontTexture {
             if( c == '\n' ) {
                 xx = x;
                 yy -= mMetrics.getHeight();
-                prevGlyph = null;
                 continue;
             }
             
-            Glyph g = Glyph.tableGet( mGlyphs, c );
+            Glyph g = mGlyphs.get( c );
             
-            if( prevGlyph != null ) {
-                xx += prevGlyph.mAdvance + prevGlyph.getKern( g.mChar );
-            }
-
-            gl.glTexCoord2f( g.mU0, g.mV0 );
+            gl.glTexCoord2f( g.mS0, g.mT0 );
             gl.glVertex3f( g.mX0 + xx, g.mY0 + yy, z );
 
-            gl.glTexCoord2f( g.mU1, g.mV0 );
+            gl.glTexCoord2f( g.mS1, g.mT0 );
             gl.glVertex3f( g.mX1 + xx, g.mY0 + yy, z );
             
-            gl.glTexCoord2f( g.mU1, g.mV1 );
+            gl.glTexCoord2f( g.mS1, g.mT1 );
             gl.glVertex3f( g.mX1 + xx, g.mY1 + yy, z );
             
-            gl.glTexCoord2f( g.mU0, g.mV1 );
+            gl.glTexCoord2f( g.mS0, g.mT1 );
             gl.glVertex3f( g.mX0 + xx, g.mY1 + yy, z );
             
-            prevGlyph = g;
+            xx += g.mAdvance;
         }
 
         gl.glEnd();
-
     }
     
     
@@ -563,118 +534,96 @@ public class FontTexture {
 
     
     
-    
-    
-    /**
-     * @deprecated Use renderBox( GL, CharSequence, float );
-     */
-    public void renderBox( GL gl, CharSequence s ) {
-        renderBox( gl, s, DEFAULT_BOX_MARGIN );
+    private static void computeGlyphSizes( FontMetrics metrics, int margin, GlyphMap glyphs ) {
+        final Font font = metrics.getFont();
+        final FontRenderContext context = metrics.getFontRenderContext();
+        final CharSequence chars = glyphs.chars();
+        final int len = chars.length();
+        final char[] carr = new char[1];
+        
+        for( int i = 0; i < len; i++ ) {
+            char c = chars.charAt( i );
+            carr[0] = c;
+            float advance  = metrics.charWidth( c );
+            // TODO: Check if this can be done faster. 
+            // I'm not sure, but I think I tried getMaxCharBounds() and it wasn't pixel accurate.
+            Rectangle rect = font.createGlyphVector( context, carr ).getOutline().getBounds();
+            glyphs.put( c, 
+                        advance,
+                        rect.x - margin,
+                        -rect.y - rect.height - margin,
+                        0,
+                        0,
+                        rect.x + rect.width + margin,
+                        -rect.y + margin,
+                        0,
+                        0 );
+        }
     }
     
-    /**
-     * @deprecated User renderBox( GL, char[], int, int, float );
-     */
-    public void renderBox( GL gl, char[] chars, int off, int len ) {
-        renderBox( gl, chars, off, len, DEFAULT_BOX_MARGIN );
-    }
-
-    /**
-     * @deprecated Use getCharsWidth(chars, off, len);
-     */
-    public float getCharWidth( char[] chars, int off, int len ) {
-        return getCharsWidth( CharBuffer.wrap( chars, off, len ) );
-    }
-
-    /**
-     * @deprecated Use getCharsWidth(s);
-     */
-    public float getStringWidth( String s ) {
-        return getCharsWidth( s );
-    }
-
-    /**
-     * @deprecated use renderChars(gl, s);
-     */
-    public void renderString( GL gl, String s ) {
-        renderChars( gl, s );
-    }
-
-
-
-    private boolean layoutGlyphs( FontRenderContext context, int w, int h, Graphics2D g ) {
-        final CharSequence chars = Glyph.CHARACTERS;
-        final int margin = 1;
-
+    
+    private static boolean layoutGlyphs( FontMetrics metrics, int texWidth, int texHeight, int margin, GlyphMap glyphs, Graphics2D g ) {
+        final Font font = metrics.getFont();
+        final FontRenderContext context = metrics.getFontRenderContext();
+        final CharSequence chars = glyphs.chars();
+        final int len = chars.length();
+        final char[] carr = new char[1];
+        
         int x = 0;
         int y = 0;
-        int len = chars.length();
-
-        final int ascent = mMetrics.getMaxAscent();
-        final int descent = mMetrics.getMaxDescent();
         int lineHeight = 0;
-
-        if( lineHeight > h ) {
-            return false;
-        }
-
-        if( g != null ) {
-            Arrays.fill( mGlyphs, null );
-        }
-
-        final char[] carr = { '\0' };
-
+        
         for( int i = 0; i < len; i++ ) {
             char c  = chars.charAt( i );
             carr[0] = c;
-            float advance = mMetrics.charWidth( c );
-
-            Rectangle rect = mFont.createGlyphVector( context, carr ).getOutline().getBounds();
-            rect = new Rectangle( rect.x - margin, rect.y - margin, rect.width + margin * 2, rect.height + margin * 2 );
+            Glyph glyph = glyphs.get( c );
             
-            final float cx = rect.x;
-            final float cy = rect.y;
-            final float cw = rect.width;
-            final float ch = rect.height;
-
-            if( x + cw > w ) {
+            int bx = glyph.mX0;
+            int by = glyph.mY0;
+            int bw = ( glyph.mX1 - glyph.mX0 );
+            int bh = ( glyph.mY1 - glyph.mY0 );
+            
+            // Check if character will fit horizontally on line.
+            if( x + bw > texWidth ) {
+                // If single character does not fit on line,
+                // no point going to next line.
                 if( x == 0 ) {
                     return false;
                 }
-
+                // Go to next line.
                 x = 0;
                 y += lineHeight;
                 lineHeight = 0;
             }
-
-            if( ch > lineHeight ) {
-                lineHeight = rect.height;
-                if( y + lineHeight > h ) {
+            // Check if character will fit vertically into texture.
+            if( bh > lineHeight ) {
+                lineHeight = bh;
+                if( y + lineHeight > texHeight ) {
                     return false;
                 }
-            }
-
+            } 
+            // Draw glyph if there's a graphics object.
             if( g != null ) {
-                g.drawChars( carr, 0, 1, x - rect.x, y - rect.y );
-                float[] kernTable = Glyph.computeKerningTable( mMetrics, c );
-
-                Glyph glyph = new Glyph( c,
-                                         advance,
-                                         kernTable,
-                                         rect.x, -( cy + ch ), cx + cw, -cy,
-                                         (float)x / w, ( y + ch ) / h, ( x + cw ) / w, (float)y / h );
-
-                Glyph.tablePut( mGlyphs, c, glyph );
+                g.drawChars( carr, 0, 1, x - bx, texHeight - y + by ); 
+                
+                // Update texture bounds on glyph.
+                glyphs.put( c,
+                            glyph.mAdvance,
+                            bx,
+                            by,
+                            (float)x / texWidth,
+                            1f - (float)y / texHeight,
+                            bx + bw,
+                            by + bh,
+                            (float)( x + bw ) / texWidth,
+                            1f - (float)( y + bh ) / texHeight );
             }
-
-            x += rect.width;
+            
+            x += bw;
         }
-        
-        Glyph.tableFillNullsWithBlank( mGlyphs );
         
         return true;
     }
-    
     
     
     private static ByteBuffer bufferGrayscale( BufferedImage image ) {
@@ -685,7 +634,7 @@ public class FontTexture {
             throw new IllegalArgumentException( "Invalid image type. Image must by 8-bit grayscale." );
         }
         
-        ByteBuffer ret = ByteBuffer.allocateDirect( ( count + 7 ) / 8 * 8 );
+        ByteBuffer ret = ByteBuffer.allocateDirect( ( ( count + 7 ) / 8 ) * 8 );
         ret.order( ByteOrder.nativeOrder() );
         
         for( int i = 0; i < in.getNumBanks(); i++ ) {
