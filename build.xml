@@ -1,93 +1,73 @@
 <project name="glui" default="dist" basedir=".">
 	<description>
-    	Builds Cogmac GLUI library.
-    </description>
+		Builds cogmac GLUI library.
+  </description>
 
 	<!-- set global properties for this build -->
-	<property name="app.name"       value="" />
-	<property name="app.main"       value="" />
-	<property name="app.icon"		value="" />
-
-	<property name="domain.name"	value="cogmac" />
-	<property name="dist.dir"	    value="dist" 	/>
-	<property name="dist.name"      value="${domain.name}_${ant.project.name}" />
-	<property name="src.dir"  	    value="src" 	/>
-	<property name="build.dir" 	    value="build" 	/>
-
-	<property name="test.src.dir"   value="src_test" />
-	<property name="test.build.dir" value="build_test" />
-	
-	<property name="lib.dir"		value="lib" />
-	<property name="resource.dir"   value="resources" />
-	<property name="resources.build.dir" value="resources_build" />
-
 	<property name="compile.target"	value="1.5" />
+		
+	<property name="app.name"    value="" />
+	<property name="app.main"    value="" />
+	<property name="app.icon"	   value="" />
+
+	<property name="domain.name"   value="cogmac" />
+	<property name="dist.dir"	     value="dist" />
+	<property name="dist.name"     value="${domain.name}_${ant.project.name}" />
+	<property name="src.dir"  	   value="src" />
+	<property name="build.dir" 	   value="build" />
+	<property name="lib.dir"       value="lib" />
+  <property name="resources.dir" value="resources" />
+
+	<property name="test.src.dir"        value="src_test" />
+	<property name="test.build.dir"      value="build_test" />
 	
+	<property name="resources.build.dir" value="resources_build" />
 	
 	
 	<path id="classpath">
 		<fileset dir="${lib.dir}">
 			<include name="*.jar"/>
 		</fileset>
-  	</path>
+  </path>
+	
+		
+	<!-- Project specific targets -->
+	
+	
+	
 	
 	<!-- Targets -->	
-  	<target name="init">
-    	<tstamp>
+	<target name="init">
+		<tstamp>
 			<format property="build.timestamp" pattern="yyyy-MM-dd HH:mm" />
 			<format property="build.timestamp.nospace" pattern="yyyy-MM-dd_HHmm" />
 		</tstamp>
-  	</target>
+	</target>
 	
 	
-  	<target name="compile" depends="init" description="compile the source " >
+	<target name="compile" depends="init" description="compile the source " >
 		<mkdir dir="${build.dir}" />
-    	<javac srcdir="src" destdir="build" debug="yes" fork="yes" target="${compile.target}" includeantruntime="false">
-      		<exclude name="**/deprecated/**"/>
-      		<classpath> 
-         		<path refid="classpath"/>
-	  		</classpath>
-    	</javac>
-  	</target>
+		<javac srcdir="src" destdir="build" debug="yes" fork="yes" target="${compile.target}" includeantruntime="false">
+			<exclude name="**/deprecated/**"/>
+			<classpath> 
+				<path refid="classpath"/>
+			</classpath>
+		</javac>
+	</target>
 	
 	
 	<target name="compile-test" depends="compile" description="compile the test source " >
-		<mkdir dir="${build.test.dir}" />
-    	<javac srcdir="${test.src.dir}" destdir="${test.build.dir}" debug="yes" nowarn="true" target="${compile.target}" includeantruntime="false">
-      		<classpath>
-         		<path refid="classpath" />
+		<mkdir dir="${test.build.dir}" />
+		<javac srcdir="${test.src.dir}" destdir="${test.build.dir}" debug="yes" nowarn="true" target="${compile.target}" includeantruntime="false">
+			<classpath>
+				<path refid="classpath" />
 				<pathelement location="${build.dir}" />
-      		</classpath>
-    	</javac>
-  	</target>
-	
-	
-	<target name="get-build-version" description="Sets build.version based on svn.">
-      	<exec executable="svnversion" dir="." outputproperty="build.version">
-			<arg line="."/>
-      	</exec>
-      	
-		<condition property="build.version.notsimple">
-			<or>
-	  			<contains string="${build.version}" substring=":"/>
-	  			<contains string="${build.version}" substring="M"/>
-	  			<contains string="${build.version}" substring="S"/>
-			</or>
-      	</condition>
-
-      	<echo message="build.version = ${build.version}"/>
+			</classpath>
+		</javac>
 	</target>
 	
 	
-    <target name="check-build-version" if="build.version.notsimple">
-		<echo message="Warning: all svn changes have not been committed."/>
-	</target>
-	
-	
-    <target name="svn" depends="get-build-version, check-build-version" />
-	
-	
-  	<target name="dist" depends="compile,svn" description="generate the jar file" >
+	<target name="dist" depends="compile,git" description="generate the jar file" >
 		<mkdir dir="${dist.dir}" />
 		
 		<manifest file="MANIFEST.MF">
@@ -95,7 +75,7 @@
 			<attribute name="Build-Version" value="${build.version}" />
 			<attribute name="Build-Timestamp" value="${build.timestamp}" />
 		</manifest>	
-
+		
 		<property name="build.touch.version" value="VERSION_${build.version}" />
 		<property name="build.touch.timestamp" value="TIMESTAMP_${build.timestamp.nospace}" />
 
@@ -103,20 +83,17 @@
 		<touch file="${build.touch.version}" />
 		<touch file="${build.touch.timestamp}" />
 		
-		<jar jarfile="${dist.dir}/${dist.name}.jar"
-				basedir="${build.dir}"
-				manifest="MANIFEST.MF">
-
+		<jar jarfile="${dist.dir}/${dist.name}.jar" basedir="${build.dir}" manifest="MANIFEST.MF">
 			<fileset dir="${src.dir}" />
 			<metainf file="README" />
 			<metainf file="${build.touch.version}" />
 			<metainf file="${build.touch.timestamp}" />
-    	</jar>
+   	</jar>
 
 		<delete file="MANIFEST.MF" />
 		<delete file="${build.touch.version}" />
 		<delete file="${build.touch.timestamp}" />
-  	</target>
+	</target>
 	
 	
 	<target name="app" depends="dist" description="Create the ${app.name} application bundle.">
@@ -130,36 +107,125 @@
 			<arg value="-n" /><arg value="${app.name}" />
 			<arg value="-r" /><arg value="${dist.dir}/${dist.name}.jar" />
 			<arg value="-r" /><arg value="${lib.dir}" />
-			<arg value="-r" /><arg value="${resource.dir}" />
+			<arg value="-r" /><arg value="${resources.dir}" />
 			<arg value="-i" /><arg value="${app.icon}" />
 			<arg value="-J" /><arg value="-Xmx1024M" />
 		</exec>
 	</target>
 
 
-  	<target name="clean" description="clean up" >
-    	<delete dir="${build.dir}" />
-  		<delete dir="${test.build.dir}" />
-  	</target>
+	<target name="clean" description="clean up" >
+		<delete dir="${build.dir}" />
+		<delete dir="${test.build.dir}" />
+	</target>
   
 
-  	<target name="test" depends="compile-test">
-    	<junit haltonfailure="true">
+	<target name="test" depends="compile-test">
+		<junit haltonfailure="true">
 			<formatter type="plain" usefile="false"/>
 		
 			<classpath>
 				<path refid="classpath" />
 				<pathelement location="${build.dir}" />
 				<pathelement location="${test.build.bir}" />
-      		</classpath>
+			</classpath>
       	
 			<batchtest fork="yes">
 				<fileset dir="${test.src.dir}">
-           			<include name="**/*Test*.java"/>
+					<include name="**/*Test*.java"/>
 					<include name="**/*Unit*.java"/>
 				</fileset>
-      		</batchtest>
+			</batchtest>
 		</junit>
-  	</target>
+	</target>
+	
+	
+	
+	
+	<!-- Version Control Stuff -->
+	
+	
+	<!-- SVN Targets -->
+	<target name="svn" depends="svn-get-version,svn-process-notclean"/>
+	
+		
+	<target name="svn-get-version" description="Sets build.version based on svn.">
+		<exec executable="svnversion" dir="." outputproperty="build.version">
+			<arg line="."/>
+		</exec>
+      	
+		<condition property="build.version.clean">
+			<not>
+				<or>
+					<contains string="${build.version}" substring=":"/>
+					<contains string="${build.version}" substring="M"/>
+	  			<contains string="${build.version}" substring="S"/>
+				</or>
+			</not>
+		</condition>
+		<echo message="build.version = ${build.version}"/>
+	</target>
+	
+	
+  <target name="svn-process-notclean" unless="build.version.clean">
+		<echo message="Warning: all svn changes have not been committed."/>
+	</target>
+	
+	
+	<!-- GIT Targets -->
+	<target name="git" depends="git-get-version"/>
+	
+	
+	<target name="git-get-version" 
+		depends="git-check-status, git-process-clean, git-process-notclean"
+		description="Sets the build.version based on git.">
+		
+		<!-- Get current version hash. -->
+		<exec executable="git" dir="." outputproperty="build.version.raw">
+			<arg line='log -1 --format="%H"' />
+		</exec>
+		
+		<property name="build.version" value="${build.version.raw}${build.version.suffix}" />
+		
+		<echo message="build.version = ${build.version}"/>
+	</target>
+	
+				
+	<target name="git-check-status">
+		<!-- Update the index. -->
+		<exec executable="git" dir="." failonerror="false">
+			<arg line='update-index -q --ignore-submodules --refresh'/>
+		</exec>
+
+		<!-- Check for unstaged changes. -->
+		<exec executable="git" dir="." failonerror="false" resultproperty="build.version.changesnotstaged" >
+			<arg line='diff-files --quiet --ignore-submodules --'/>
+		</exec>
+		
+		<!-- Check for uncommited changes. -->
+		<exec executable="git" dir="." failonerror="false" resultproperty="build.version.changesnotcommitted" >
+			<arg line='diff-index --cached --quiet HEAD --ignore-submodules --'/>
+		</exec>
+		
+		<condition property="build.version.clean">
+			<and>
+				<equals arg1="${build.version.changesnotstaged}"    arg2="0" />
+				<equals arg1="${build.version.changesnotcommitted}" arg2="0" />
+			</and>
+		</condition>
+	</target>
+	
+	
+	<target name="git-process-clean" depends="git-check-status" if="build.version.clean">
+		<property name="build.version.suffix" value=""/>
+	</target>
+	
+		
+	<target name="git-process-notclean" depends="git-check-status" unless="build.version.clean">
+		<property name="build.version.suffix" value="_modified"/>
+		<echo message="WARNING: Project contains unversioned modifications." />
+	</target>
+	
+	
 	
 </project>
