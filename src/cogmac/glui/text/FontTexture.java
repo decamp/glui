@@ -604,7 +604,7 @@ public class FontTexture {
 
     private boolean layoutGlyphs( FontRenderContext context, int w, int h, Graphics2D g ) {
         final CharSequence chars = Glyph.CHARACTERS;
-        final int margin = 1;
+        final int margin = 2;
 
         int x = 0;
         int y = 0;
