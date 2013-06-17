@@ -1,22 +1,17 @@
 package cogmac.glui.event;
 
-import java.util.Random;
-
-import javax.media.opengl.GL;
 import javax.swing.JFrame;
-
+import javax.media.opengl.GL;
 import static javax.media.opengl.GL.*;
 
 import cogmac.glui.*;
+
 
 /**
  * @author decamp
  */
 public class TestFocus {
 
-    
-    private static Random RAND = new Random();
-    
     
     public static void main(String[] args) {
         test();

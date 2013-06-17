@@ -57,13 +57,14 @@ public class FontTexture {
         mMetrics = FontUtil.metrics( font );
         mGlyphs  = GlyphMaps.newGlyphMap( chars );
         
-        int dim = 256;
+        int dim    = 256;
+        int margin = 4;
         FontRenderContext context = mMetrics.getFontRenderContext();
         
-        computeGlyphSizes( mMetrics, 1, mGlyphs );
+        computeGlyphSizes( mMetrics, margin, mGlyphs );
         
         // Brute force size determination.  Whatevs.
-        while( !layoutGlyphs( mMetrics, dim, dim, 1, mGlyphs, null ) ) {
+        while( !layoutGlyphs( mMetrics, dim, dim, margin, mGlyphs, null ) ) {
             dim <<= 1;
             if( dim > 1024 * 4 ) {
                 throw new InstantiationError( "Font size too large for memory: " + mFont.getSize() );
@@ -78,7 +79,7 @@ public class FontTexture {
         g.clearRect( 0, 0, dim, dim );
         g.setColor( Color.WHITE );
         
-        layoutGlyphs( mMetrics, dim, dim, 1, mGlyphs, g );
+        layoutGlyphs( mMetrics, dim, dim, margin, mGlyphs, g );
         mGlyphs.optimize();
         
         //ImagePanel.showImage( im );

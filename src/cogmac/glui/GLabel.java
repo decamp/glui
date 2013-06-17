@@ -1,14 +1,13 @@
 package cogmac.glui;
 
 import java.awt.Font;
-import java.awt.event.*;
-
 import javax.media.opengl.*;
+import static javax.media.opengl.GL.*;
 
 import cogmac.glui.event.GPaintListener;
 import cogmac.glui.text.FontTexture;
 
-import static javax.media.opengl.GL.*;
+
 
 
 /**
@@ -17,10 +16,6 @@ import static javax.media.opengl.GL.*;
 public class GLabel extends GPanel implements GPaintListener {
 
     private static final int    DEFAULT_FONT_SIZE  = 12;
-    private static final Font   DEFAULT_FONT       = new Font( "Verdana", Font.PLAIN, DEFAULT_FONT_SIZE );
-    private static final GColor DEFAULT_FOREGROUND = new GColor( 0, 0, 0 );
-
-    private ActionListener mCaster;
     
     private String mText;
     private float mHorSrc   = 0.5f;

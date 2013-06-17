@@ -39,7 +39,6 @@ public class GPanel implements GComponent {
     private boolean mDisplayed = false;
     private boolean mVisible   = true;
     private boolean mEnabled   = true;
-    private boolean mFocusable = false;
     private boolean mHasFocus  = false;
     
     private boolean mNeedsPaint  = false;

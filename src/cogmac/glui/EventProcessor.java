@@ -316,12 +316,6 @@ class EventProcessor {
         }
         
         initMouseLocation();
-        
-        //focus = mMouseLocation;
-        //
-        //if( focus == null || ( !GToolkit.isMouseFocusable( focus ) || !isChild( root, focus ) ) ) {
-        //    initMouseLocation();
-        //}
     }
     
     
@@ -373,20 +367,18 @@ class EventProcessor {
         Box bounds = source.absoluteBounds();
 
         GMouseEvent e = new GMouseEvent( source,
-                id,
-                System.currentTimeMillis() * 1000L,
-                mMouseMods,
-                mMouseX - bounds.x(),
-                mMouseY - bounds.y(),
-                0,
-                false,
-                0 );
-
+                                         id,
+                                         System.currentTimeMillis() * 1000L,
+                                         mMouseMods,
+                                         mMouseX - bounds.x(),
+                                         mMouseY - bounds.y(),
+                                         0,
+                                         false,
+                                         0 );
+        
         source.processMouseEvent( e );
     }
 
-
-    
     
     private void forceMouseRelease( GComponent source ) {
         Box bounds = source.absoluteBounds();
@@ -400,14 +392,16 @@ class EventProcessor {
                 mods &= ~BUTTON_MASKS[i];
                 
                 GMouseEvent e = new GMouseEvent( source,
-                        GMouseEvent.MOUSE_RELEASED,
-                        when,
-                        mods,
-                        ex,
-                        ey,
-                        0,
-                        false,
-                        BUTTON_IDS[i] );
+                                                 GMouseEvent.MOUSE_RELEASED,
+                                                 when,
+                                                 mods,
+                                                 ex,
+                                                 ey,
+                                                 0,
+                                                 false,
+                                                 BUTTON_IDS[i] );
+                
+                source.processMouseEvent( e );
             }
         }
     }
@@ -604,9 +598,8 @@ class EventProcessor {
 
         return false;
     }
-
-
-
+    
+    
     private static class InputFrame {
 
         final GComponent mRoot;

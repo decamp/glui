@@ -1,10 +1,7 @@
 package cogmac.glui;
 
-import java.awt.*;
 import java.awt.event.*;
-
 import javax.media.opengl.*;
-
 import static javax.media.opengl.GL.*;
 
 import cogmac.glui.text.FontTexture;
@@ -13,36 +10,36 @@ import cogmac.glui.text.FontTexture;
 public class GCheckBox extends GButton implements GSelectable {
 
     private static final int DEFAULT_FONT_SIZE = 12;
-    private static final Font DEFAULT_FONT     = new Font("Verdana", Font.PLAIN, DEFAULT_FONT_SIZE);
+    //private static final Font DEFAULT_FONT     = new Font("Verdana", Font.PLAIN, DEFAULT_FONT_SIZE);
     
     private boolean mSelected = false;
     
 
-    public GCheckBox(String label) {
-        this(label, false);
+    public GCheckBox( String label ) {
+        this( label, false );
     }
     
     
-    public GCheckBox(String label, boolean selected) {
-        super(label);
-        
+    public GCheckBox( String label, boolean selected ) {
+        super( label );
         mSelected = selected;
-        
-        addActionListener(new ActionHandler());
+        addActionListener( new ActionHandler() );
     }
     
     
 
-    public void setSelected(boolean selected) {
+    public void setSelected( boolean selected ) {
         mSelected = selected;
     }
+    
     
     public boolean isSelected() {
         return mSelected;
     }
     
+    
     @Override
-    public void paint(GGraphics g) {
+    public void paint( GGraphics g ) {
         final GL gl = g.gl();
 
         final int w = width();
