@@ -61,9 +61,19 @@ public class FontUtil {
 
 
     public static float charsWidth( FontMetrics metrics, CharSequence seq, int off, int len ) {
-        if( len == 0 )
+        int ret = 0;
+        for( int i = 0; i < len; i++ ) {
+            ret += metrics.charWidth( seq.charAt( i + off ) );
+        }
+        return ret;
+        
+        /* 
+        // This version assumed that kerning information was actually available.
+        // Unfortunately, there's no evidence that Java can provide kerning info at this time.
+        if( len == 0 ) {
             return 0;
-
+        }
+        
         char[] arr = { seq.charAt( off ), 0 };
         float width = metrics.charWidth( arr[0] );
         float prevAdvance = width;
@@ -75,14 +85,24 @@ public class FontUtil {
             width += prevAdvance;
             arr[0] = arr[1];
         }
-
+    
         return width;
+        */
     }
 
 
     public static float charsWidth( FontMetrics metrics, char[] chars, int off, int len ) {
-        if( len == 0 )
+        int ret = 0;
+        for( int i = 0; i < len; i++ ) {
+            ret += metrics.charWidth( chars[i + off] );
+        }
+        return ret;
+        
+        /*
+        // Alas, there's little point since Java does not seem to provide kerning info.
+        if( len == 0 ) {
             return 0;
+        }
 
         float width = metrics.charWidth( chars[off] );
         float prevAdvance = width;
@@ -94,6 +114,7 @@ public class FontUtil {
         }
 
         return width;
+        */
     }
     
     
@@ -107,7 +128,7 @@ public class FontUtil {
      * @param len       Number of chars in input.
      * @param maxWidth  Maximum width for layout.
      * @param outWidth  <code>outWidth[0]</code> will hold the exact width
-     *                  the exact width of the fitted characters on return.
+     *                  of the fitted characters on return. May be <code>null</code>
      *                  May be <code>null</code>.
      *                  
      * @return The number of characters that fit within the specified width.
@@ -119,6 +140,25 @@ public class FontUtil {
                                  float maxWidth, 
                                  float[] outWidth ) 
     {
+        int i = 0;
+        int lineWidth = 0;
+        for( ; i < len; i++ ) {
+            int charWidth = metrics.charWidth( chars[i + off] );
+            lineWidth += charWidth;
+            if( lineWidth > maxWidth ) {
+                lineWidth -= charWidth;
+                break;
+            }
+        }
+        
+        if( outWidth != null ) {
+            outWidth[0] = lineWidth;
+        }
+        
+        return i;
+        
+        /*
+        // Version to use if kerning tables become available.
         if( len == 0 ) {
             if( outWidth != null ) { 
                 outWidth[0] = 0f;
@@ -153,6 +193,7 @@ public class FontUtil {
             outWidth[0] = width;
         }
         return len;
+        */
     }
     
     
@@ -178,6 +219,25 @@ public class FontUtil {
                                  float maxWidth, 
                                  float[] outWidth )
     {
+        int i = 0;
+        int lineWidth = 0;
+        for( ; i < len; i++ ) {
+            int charWidth = metrics.charWidth( seq.charAt( i + off ) );
+            lineWidth += charWidth;
+            if( lineWidth > maxWidth ) {
+                lineWidth -= charWidth;
+                break;
+            }
+        }
+        
+        if( outWidth != null ) {
+            outWidth[0] = lineWidth;
+        }
+        
+        return i;
+        
+        /*
+        // Version to use if kerning tables become available.
         if( len == 0 ) {
             if( outWidth != null ) {
                 outWidth[0] = 0f;
@@ -215,6 +275,7 @@ public class FontUtil {
             outWidth[0] = width;
         }
         return len;
+        */
     }
     
     
@@ -258,9 +319,17 @@ public class FontUtil {
                                       float[] out,
                                       int outOffset ) 
     {
-        if( len <= 0 )
+        int pos = 0;
+        for( int i = 0; i < len; i++ ) {
+            pos += metrics.charWidth( seq.charAt( i + off ) );
+            out[ i + outOffset ] = pos;
+        }
+        
+        /*
+        // Only useful when kerning tables become available.
+        if( len <= 0 ) {
             return;
-
+        }
         char[] arr = { seq.charAt( off ), 0 };
         float width = metrics.charWidth( arr[0] );
         float prevAdvance = width;
@@ -275,6 +344,7 @@ public class FontUtil {
 
             out[outOffset++] = width;
         }
+        */
     }
 
 
@@ -294,8 +364,17 @@ public class FontUtil {
      * @param outOffset   Offset into <code>out</code> where output will be written.
      */
     public static void charPositions( FontMetrics metrics, char[] chars, int off, int len, float[] out, int outOffset ) {
-        if( len <= 0 )
+        int width = 0;
+        for( int i = 0; i < len; i++ ) {
+            width += metrics.charWidth( chars[ i + off ] );
+            out[ i + outOffset ] = width;
+        }
+        
+        /*
+        // Not useful until kerning tables are available.
+        if( len <= 0 ) {
             return;
+        }
 
         float width = metrics.charWidth( chars[off] );
         float prevAdvance = width;
@@ -308,6 +387,7 @@ public class FontUtil {
 
             out[outOffset++] = width;
         }
+        */
     }
     
     
@@ -323,7 +403,7 @@ public class FontUtil {
      */
     public static List<String> splitAtWordBoundaries( String text, FontMetrics metrics, float lineWidth ) {
         final float spaceWidth = metrics.charWidth( ' ' );
-        final StringBuilder s = new StringBuilder();
+        final StringBuilder s  = new StringBuilder();
         Matcher m = WORD_PAT.matcher( text );
         
         boolean newLine = true;
