@@ -1,6 +1,6 @@
 <project name="glui" default="dist" basedir=".">
 	<description>
-    	Builds Cogmac GLUI library.
+    	Builds Bitstillery GLUI library.
     </description>
 
 	<!-- set global properties for this build -->
@@ -8,7 +8,7 @@
 	<property name="app.main"       value="" />
 	<property name="app.icon"		value="" />
 
-	<property name="domain.name"	value="cogmac" />
+	<property name="domain.name"	value="bits" />
 	<property name="dist.dir"	    value="dist" 	/>
 	<property name="dist.name"      value="${domain.name}_${ant.project.name}" />
 	<property name="src.dir"  	    value="src" 	/>
