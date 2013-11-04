@@ -1,38 +1,35 @@
 <project name="glui" default="dist" basedir=".">
 	<description>
-		Builds cogmac GLUI library.
-  </description>
+		OpenGL window manager.
+	</description>
 
 	<!-- set global properties for this build -->
 	<property name="compile.target"	value="1.5" />
-		
-	<property name="app.name"    value="" />
-	<property name="app.main"    value="" />
-	<property name="app.icon"	   value="" />
 
-	<property name="domain.name"   value="cogmac" />
-	<property name="dist.dir"	     value="dist" />
-	<property name="dist.name"     value="${domain.name}_${ant.project.name}" />
-	<property name="src.dir"  	   value="src" />
-	<property name="build.dir" 	   value="build" />
-	<property name="lib.dir"       value="lib" />
-  <property name="resources.dir" value="resources" />
-
-	<property name="test.src.dir"        value="src_test" />
-	<property name="test.build.dir"      value="build_test" />
-	
+	<property name="domain.name"    value="bits" />
+	<property name="dist.dir"	    value="dist" />
+	<property name="dist.name"      value="${domain.name}_${ant.project.name}" />
+	<property name="src.dir"  	    value="src" />
+	<property name="build.dir" 	    value="build" />
+	<property name="lib.dir"        value="lib" />
+	<property name="resources.dir"  value="resources" />
+	<property name="test.src.dir"   value="src_test" />
+	<property name="test.build.dir" value="build_test" />
 	<property name="resources.build.dir" value="resources_build" />
+	
+	<property name="app.name"       value="" />
+	<property name="app.main"       value="" />
+	<property name="app.icon"       value="" />
 	
 	
 	<path id="classpath">
 		<fileset dir="${lib.dir}">
 			<include name="*.jar"/>
 		</fileset>
-  </path>
-	
+	</path>
+		
 		
 	<!-- Project specific targets -->
-	
 	
 	
 	
@@ -88,7 +85,7 @@
 			<metainf file="README" />
 			<metainf file="${build.touch.version}" />
 			<metainf file="${build.touch.timestamp}" />
-   	</jar>
+		</jar>
 
 		<delete file="MANIFEST.MF" />
 		<delete file="${build.touch.version}" />
@@ -153,13 +150,12 @@
 		<exec executable="svnversion" dir="." outputproperty="build.version">
 			<arg line="."/>
 		</exec>
-      	
 		<condition property="build.version.clean">
 			<not>
 				<or>
 					<contains string="${build.version}" substring=":"/>
 					<contains string="${build.version}" substring="M"/>
-	  			<contains string="${build.version}" substring="S"/>
+					<contains string="${build.version}" substring="S"/>
 				</or>
 			</not>
 		</condition>
@@ -167,7 +163,7 @@
 	</target>
 	
 	
-  <target name="svn-process-notclean" unless="build.version.clean">
+	<target name="svn-process-notclean" unless="build.version.clean">
 		<echo message="Warning: all svn changes have not been committed."/>
 	</target>
 	
@@ -179,14 +175,11 @@
 	<target name="git-get-version" 
 		depends="git-check-status, git-process-clean, git-process-notclean"
 		description="Sets the build.version based on git.">
-		
 		<!-- Get current version hash. -->
 		<exec executable="git" dir="." outputproperty="build.version.raw">
 			<arg line='log -1 --format="%H"' />
 		</exec>
-		
 		<property name="build.version" value="${build.version.raw}${build.version.suffix}" />
-		
 		<echo message="build.version = ${build.version}"/>
 	</target>
 	
@@ -196,17 +189,14 @@
 		<exec executable="git" dir="." failonerror="false">
 			<arg line='update-index -q --ignore-submodules --refresh'/>
 		</exec>
-
 		<!-- Check for unstaged changes. -->
 		<exec executable="git" dir="." failonerror="false" resultproperty="build.version.changesnotstaged" >
 			<arg line='diff-files --quiet --ignore-submodules --'/>
 		</exec>
-		
 		<!-- Check for uncommited changes. -->
 		<exec executable="git" dir="." failonerror="false" resultproperty="build.version.changesnotcommitted" >
 			<arg line='diff-index --cached --quiet HEAD --ignore-submodules --'/>
 		</exec>
-		
 		<condition property="build.version.clean">
 			<and>
 				<equals arg1="${build.version.changesnotstaged}"    arg2="0" />
