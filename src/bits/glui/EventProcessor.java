@@ -521,7 +521,6 @@ class EventProcessor {
         if( c == null ) {
             c = root.mouseFocusableComponentAt( ex - bounds.x(), ey - bounds.y() );
             if( c == null ) {
-                mMouseX = Integer.MIN_VALUE;
                 return false;
             }
 

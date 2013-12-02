@@ -63,7 +63,7 @@ public class TestFocus {
     }
 
 
-    private static class Panel extends GPanel implements GMouseListener, GFocusListener, GKeyListener {
+    private static class Panel extends GPanel implements GMouseListener, GMouseMotionListener, GFocusListener, GKeyListener {
 
         private final int mIndex;
         private boolean mHasFocus = false;
@@ -75,6 +75,7 @@ public class TestFocus {
         public Panel( int index ) {
             mIndex = index;
             addMouseListener( this );
+            addMouseMotionListener( this );
             addFocusListener( this );
             addKeyListener( this );
         }
@@ -161,6 +162,16 @@ public class TestFocus {
 
         public void mouseClicked( GMouseEvent e ) {}
 
+        
+        @Override
+        public void mouseMoved( GMouseEvent e ) {}
+        
+        
+        @Override
+        public void mouseDragged( GMouseEvent e ) {
+            System.out.println( this + "\t" + e.getX() + ", " + e.getY() );
+        }
+        
 
         public void focusGained( GFocusEvent e ) {
             System.out.println( "Has focus: " + mIndex );

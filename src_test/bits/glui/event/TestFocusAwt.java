@@ -59,7 +59,7 @@ public class TestFocusAwt {
     
     
     
-    private static class Panel extends JPanel implements MouseListener, FocusListener, KeyListener {
+    private static class Panel extends JPanel implements MouseListener, MouseMotionListener, FocusListener, KeyListener {
     
         private final int mIndex;
         private boolean mHasFocus  = false;
@@ -74,6 +74,7 @@ public class TestFocusAwt {
             mIndex = index;
             
             addMouseListener( this );
+            addMouseMotionListener( this );
             addFocusListener( this );
             addKeyListener( this );
             
@@ -141,9 +142,17 @@ public class TestFocusAwt {
             repaint();
         }
 
-
+        
         public void mouseClicked(MouseEvent e) {}
 
+                       
+        public void mouseMoved( MouseEvent e ) {}
+        
+        
+        public void mouseDragged( MouseEvent e ) {
+            //System.out.println( this + "\t" + e.getX() + ", " + e.getY() );
+        }
+        
 
         public void focusGained(FocusEvent e) {
             mHasFocus = true;
