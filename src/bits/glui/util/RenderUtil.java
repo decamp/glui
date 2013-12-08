@@ -1,6 +1,5 @@
 package bits.glui.util;
 
-import java.awt.Color;
 import java.awt.image.*;
 import java.nio.*;
 
@@ -9,7 +8,6 @@ import java.nio.*;
  * @author decamp
  */
 public final class RenderUtil {
-    
     
     /**
      * Converts a BufferedImage to a directly allocated java.nio.ByteBuffer.
@@ -96,67 +94,7 @@ public final class RenderUtil {
         
         return ret;
     }
-
     
-    
-    
-    /**
-     * @deprecated Use cogmac.math3d.Pots
-     */
-    public static int higherPowerOfTwo(int val) {
-        if(val <= 0)
-            return 1;
-        
-        val = (val >>  1) | val;
-        val = (val >>  2) | val;
-        val = (val >>  4) | val;
-        val = (val >>  8) | val;
-        val = (val >> 16) | val;
-        
-        return val + 1;
-    }
-
-    /**
-     * @deprecated Use cogmac.math3d.Pots 
-     */
-    public static int ceilPowerOfTwo(int val) {
-        if(val <= 0)
-            return 1;
-        
-        return higherPowerOfTwo(val - 1);
-    }
-
-    /**
-     * @deprecated Use cogmac.math3d.Pots
-     */
-    public static int lowerPowerOfTwo(int val) {
-        if(val <= 1)
-            return 1;
-        
-        return higherPowerOfTwo(val - 1) >> 1;
-    }
-
-    /**
-     * @deprecated Use cogmac.math3d.Pots 
-     */
-    public static int floorPowerOfTwo(int val) {
-        if(val <= 1)
-            return 1;
-        
-        return higherPowerOfTwo(val) >> 1;
-    }
-    
-    /**
-     * @deprecated Use something else.  Nothing in Glui uses this method (GColor now being used), 
-     * and Draw3d has a designated class for dumb color conversions. 
-     */
-    public static float[] colorToArray(Color c) {
-        return new float[]{ c.getRed() / 255f, 
-                            c.getGreen() / 255f, 
-                            c.getBlue() / 255f, 
-                            c.getAlpha() / 255f};   
-    }
-
     
     private RenderUtil() {}
     
