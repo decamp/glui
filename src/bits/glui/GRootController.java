@@ -41,6 +41,7 @@ public final class GRootController {
     
     
     private final GLCanvas mCanvas;
+    private final GLEventHandler mHandler;
     private final InitNode mInit;
     private final FontManager mFontManager;
     private final Graphics mGraphics;
@@ -54,6 +55,7 @@ public final class GRootController {
     
     private GRootController( GLCapabilities glc, FontManager fontManager ) {
         mCanvas      = new GLCanvas( glc );
+        mHandler     = new GLEventHandler();
         mInit        = new InitNode( mCanvas );
         mFontManager = fontManager == null ? new FontManager() : fontManager;
         mGraphics    = new Graphics( mFontManager );
@@ -63,7 +65,7 @@ public final class GRootController {
         mProcessor   = new EventProcessor( mCanvas, mRoot );
         mRoot.treeProcessParentChanged( mQueue, null );
         
-        mCanvas.addGLEventListener( new GLEventHandler() );
+        mCanvas.addGLEventListener( mHandler );
         new AwtEventTranslator( mCanvas, mProcessor );
     }
 
@@ -160,6 +162,10 @@ public final class GRootController {
         mInit.autoSwap( autoSwap );
     }
     
+    public void setErrorCallback( ErrorCallback err ) {
+        mHandler.setErrorCallback( err );
+    }
+    
     
     public void generateUpdates( GLAutoDrawable gld ) {
         generateUpdates( gld, mRoot.absoluteBounds(), null );
@@ -229,27 +235,55 @@ public final class GRootController {
     
     private final class GLEventHandler implements GLEventListener {
 
+        private ErrorCallback mErr = null; 
+        
         public void init( GLAutoDrawable gld ) {
-            mInit.init( gld );
+            try {
+                mInit.init( gld );
+            } catch( Exception ex ) {
+                handle( ex );
+            }
         }
 
         public void reshape( GLAutoDrawable gld, int x, int y, int w, int h ) {
-            mInit.reshape(gld, x, y, w, h);
-            mRoot.bounds(x, y, w, h);
+            try {
+                mInit.reshape(gld, x, y, w, h);
+                mRoot.bounds(x, y, w, h);
+            } catch( Exception ex ) {
+                handle( ex );
+            }
         }
         
         public void display( GLAutoDrawable gld ) {
-            mInit.push( gld.getGL() );
-            generateUpdates( gld );
-            mInit.pop( gld.getGL() );
+            try {
+                mInit.push( gld.getGL() );
+                generateUpdates( gld );
+                mInit.pop( gld.getGL() );
+            } catch( Exception ex ) {
+                handle( ex );
+            }                        
         }
 
         public void displayChanged( GLAutoDrawable gld, boolean arg1, boolean arg2 ) {}
 
+        synchronized void setErrorCallback( ErrorCallback err ) {
+            mErr = err;
+        }
+        
+        private void handle( Exception ex ) {
+            if( mErr != null ) {
+                mErr.error( ex );
+            } else if( ex instanceof RuntimeException ) {
+                throw ((RuntimeException)ex );
+            } else {
+                ex.printStackTrace();
+            }   
+        }
+        
     }
     
     
-    public final class InitNode {
+    public static final class InitNode {
 
         private final GLCanvas mCanvas;
         
@@ -420,53 +454,11 @@ public final class GRootController {
         }
         
     }
+
     
-    
-//    private static class Animator extends Thread {
-//
-//        private final GLCanvas mTarget;
-//        private final long mMinMillisPerFrame;
-//        
-//        private boolean mKill = false;
-//        
-//        
-//        Animator( GLCanvas target, long minMicrosPerFrame ) {
-//            mTarget = target;
-//            mMinMillisPerFrame = minMicrosPerFrame / 1000L;
-//        }
-//            
-//        
-//        public void run() {
-//            long nextMillis = System.currentTimeMillis();
-//            
-//            while(true) {
-//                synchronized(this) {
-//                    if(mKill) {
-//                        break;
-//                    }
-//                    
-//                    long nowMillis = System.currentTimeMillis();
-//                    long waitMillis  = nextMillis - nowMillis;
-//                    nextMillis = nowMillis + mMinMillisPerFrame;
-//                    
-//                    if(waitMillis > 10L) {
-//                        try{
-//                            Thread.sleep(waitMillis);
-//                        }catch(InterruptedException ex) {}
-//                    }
-//                }
-//                
-//                mTarget.repaint();
-//            }
-//        }
-//        
-//        
-//        public synchronized void stopAnimator() {
-//            mKill = true;
-//            notify();
-//        }
-//        
-//    }
+    public static interface ErrorCallback {
+        public void error( Throwable t );
+    }
     
     
     private static final class Graphics implements GGraphics {
