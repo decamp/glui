@@ -16,7 +16,7 @@ public class LimitAnimator implements Animator {
     
     public LimitAnimator( Component target, float maxFps ) {
         mTarget = target;
-        maxFramerate( maxFps );
+        target( maxFps );
     }
     
 
@@ -48,7 +48,7 @@ public class LimitAnimator implements Animator {
         return mThread != null;
     }
 
-    public synchronized void maxFramerate( float fps ) {
+    public synchronized void target( float fps ) {
         if( fps <= 0f ) {
             mMinMillisPerFrame = 0L;
         } else {

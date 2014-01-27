@@ -49,7 +49,7 @@ public final class GRootController {
     private final EventProcessor mProcessor;
     private final GLayeredPanel mRoot;
     
-    private LimitAnimator mAnimator = null;
+    private Animator mAnimator = null;
     
     
     private GRootController( GLCapabilities glc, FontManager fontManager ) {
@@ -85,13 +85,23 @@ public final class GRootController {
         return mRoot;
     }
     
-    public void startAnimator( double maxFps ) {
+    public void setAnimator( Animator anim ) {
+        synchronized( this ) {
+            if( mAnimator != null ) {
+                mAnimator.stop();
+                mAnimator = null;
+            }
+            mAnimator = anim;
+        }
+    }
+    
+    public void startAnimator( double targetFps ) {
         synchronized( this ) {
             if( mAnimator == null ) {
                 mAnimator = new LimitAnimator( mCanvas );
             }
             
-            mAnimator.maxFramerate( (float)maxFps );
+            mAnimator.target( (float)targetFps );
             mQueue.ignoreRepaints( true );
             mAnimator.start();
         }
