@@ -6,6 +6,7 @@ import java.awt.Component;
 import javax.media.opengl.*;
 
 import bits.glui.text.FontManager;
+import bits.glui.util.*;
 
 import static javax.media.opengl.GL.*;
 
@@ -48,7 +49,7 @@ public final class GRootController {
     private final EventProcessor mProcessor;
     private final GLayeredPanel mRoot;
     
-    private Animator mAnimator;
+    private LimitAnimator mAnimator = null;
     
     
     private GRootController( GLCapabilities glc, FontManager fontManager ) {
@@ -86,23 +87,23 @@ public final class GRootController {
     
     public void startAnimator( double maxFps ) {
         synchronized( this ) {
-            if( mAnimator != null )
-                return;
+            if( mAnimator == null ) {
+                mAnimator = new LimitAnimator( mCanvas );
+            }
             
+            mAnimator.maxFramerate( (float)maxFps );
             mQueue.ignoreRepaints( true );
-            long micros = (long)( 1000000.0 / maxFps ); 
-            mAnimator = new Animator( mCanvas, micros );
             mAnimator.start();
         }
     }
     
     public void stopAnimator() {
-        synchronized(this) {
-            if(mAnimator == null)
+        synchronized( this ) {
+            if( mAnimator == null ) {
                 return;
-            
-            mAnimator.stopAnimator();
-            mAnimator = null;
+            }
+
+            mAnimator.stop();
             mQueue.ignoreRepaints( false );
         }
     }
@@ -411,51 +412,51 @@ public final class GRootController {
     }
     
     
-    private static class Animator extends Thread {
-
-        private final GLCanvas mTarget;
-        private final long mMinMillisPerFrame;
-        
-        private boolean mKill = false;
-        
-        
-        Animator( GLCanvas target, long minMicrosPerFrame ) {
-            mTarget = target;
-            mMinMillisPerFrame = minMicrosPerFrame / 1000L;
-        }
-            
-        
-        public void run() {
-            long nextMillis = System.currentTimeMillis();
-            
-            while(true) {
-                synchronized(this) {
-                    if(mKill) {
-                        break;
-                    }
-                    
-                    long nowMillis = System.currentTimeMillis();
-                    long waitMillis  = nextMillis - nowMillis;
-                    nextMillis = nowMillis + mMinMillisPerFrame;
-                    
-                    if(waitMillis > 10L) {
-                        try{
-                            Thread.sleep(waitMillis);
-                        }catch(InterruptedException ex) {}
-                    }
-                }
-                
-                mTarget.repaint();
-            }
-        }
-        
-        
-        public synchronized void stopAnimator() {
-            mKill = true;
-            notify();
-        }
-        
-    }
+//    private static class Animator extends Thread {
+//
+//        private final GLCanvas mTarget;
+//        private final long mMinMillisPerFrame;
+//        
+//        private boolean mKill = false;
+//        
+//        
+//        Animator( GLCanvas target, long minMicrosPerFrame ) {
+//            mTarget = target;
+//            mMinMillisPerFrame = minMicrosPerFrame / 1000L;
+//        }
+//            
+//        
+//        public void run() {
+//            long nextMillis = System.currentTimeMillis();
+//            
+//            while(true) {
+//                synchronized(this) {
+//                    if(mKill) {
+//                        break;
+//                    }
+//                    
+//                    long nowMillis = System.currentTimeMillis();
+//                    long waitMillis  = nextMillis - nowMillis;
+//                    nextMillis = nowMillis + mMinMillisPerFrame;
+//                    
+//                    if(waitMillis > 10L) {
+//                        try{
+//                            Thread.sleep(waitMillis);
+//                        }catch(InterruptedException ex) {}
+//                    }
+//                }
+//                
+//                mTarget.repaint();
+//            }
+//        }
+//        
+//        
+//        public synchronized void stopAnimator() {
+//            mKill = true;
+//            notify();
+//        }
+//        
+//    }
     
     
     private static final class Graphics implements GGraphics {
