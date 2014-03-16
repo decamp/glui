@@ -10,7 +10,6 @@ import javax.media.opengl.GL;
 import bits.glui.event.*;
 
 
-
 /**
  * @author decamp
  */
@@ -67,23 +66,28 @@ public class GPanel implements GComponent {
     
     
 
+    @Override
     public synchronized void addChild( GComponent child ) {
-        if( mChildren.contains( child ) )
+        if( mChildren.contains( child ) ) {
             return;
+        }
         
         mChildren.add( child );
         childAdded( child );
     }
     
+    @Override
     public synchronized void removeChild( GComponent child ) {
         if( mChildren.remove( child ) ) {
             childRemoved( child );
         }
     }
     
+    @Override
     public synchronized void clearChildren() {
-        if( mChildren.isEmpty() )
+        if( mChildren.isEmpty() ) {
             return;
+        }
         
         for( GComponent p : mChildren ) {
             childRemoved( p );
@@ -92,31 +96,38 @@ public class GPanel implements GComponent {
         mChildren.clear();
     }
     
+    @Override
     public List<GComponent> children() {
         return mSafeChildren;
     }
 
+    @Override
     public void setLayout( GLayout layout ) {
         mLayout = layout;
     }
 
+    @Override
     public GComponent parent() {
         return mParent;
     }
     
     
+    @Override
     public Box bounds() {
         return Box.fromBounds( mX, mY, mW, mH );
     }
 
+    @Override
     public Box absoluteBounds() {
         Box ret = mAbsoluteBounds;
-        if( ret != null )
+        if( ret != null ) {
             return ret;
+        }
         
         GComponent parent = mParent;
-        if( parent != null )
+        if( parent != null ) {
             ret = parent.absoluteBounds();
+        }
         
         synchronized( this ) {
             if( ret == null ) {
@@ -131,34 +142,42 @@ public class GPanel implements GComponent {
         return ret;
     }
 
+    @Override
     public int x() {
         return mX;
     }
 
+    @Override
     public int y() {
         return mY;
     }
 
+    @Override
     public int width() {
         return mW;
     }
 
+    @Override
     public int height() {
         return mH;
     }
     
+    @Override
     public boolean contains( int x, int y ) {
         return x >= 0 && y >= 0 && x < mW && y < mH;
     }
     
+    @Override
     public GComponent position( int x, int y ) {
         return bounds( x, y, width(), height() );
     }
     
+    @Override
     public GComponent size( int w, int h ) {
         return bounds( x(), y(), w, h );
     }
     
+    @Override
     public synchronized GComponent bounds( int x, int y, int w, int h ) {
         boolean moved   = x != mX || y != mY;
         boolean resized = w != mW || h != mH;
@@ -183,13 +202,16 @@ public class GPanel implements GComponent {
         return this;
     }
     
+    @Override
     public synchronized void setVisible( boolean visible ) {
-        if( visible == mVisible )
+        if( visible == mVisible ) {
             return;
+        }
         
         mVisible = visible;
-        if( !updateDisplayed() ) 
+        if( !updateDisplayed() ) {
             return;
+        }
         
         if( visible ) {
             treeProcessParentShown();
@@ -198,13 +220,16 @@ public class GPanel implements GComponent {
         }
     }
     
+    @Override
     public boolean isVisible() {
         return mVisible;
     }
     
+    @Override
     public synchronized void setEnabled( boolean enable ) {
-        if( enable == mEnabled )
+        if( enable == mEnabled ) {
             return;
+        }
         
         mEnabled = enable;
         
@@ -213,67 +238,82 @@ public class GPanel implements GComponent {
         }
     }
     
+    @Override
     public boolean isEnabled() {
         return mEnabled;
     }
     
+    @Override
     public boolean isDisplayed() {
         return mDisplayed;
     }
     
     
+    @Override
     public GPanel font( Font font ) {
         mFont = font == null ? DEFAULT_FONT : font;
         return this;
     }
 
+    @Override
     public Font font() {
         return mFont;
     }
 
+    @Override
     public GPanel foreground( GColor foreground ) {
         mForeground = foreground == null ? DEFAULT_FOREGROUND : foreground;
         return this;
     }
 
+    @Override
     public GColor foreground() {
         return mForeground;
     }
 
+    @Override
     public GPanel background( GColor background ) {
         mBackground = background;
         return this;
     }
 
+    @Override
     public GColor background() {
         return mBackground;
     }
 
     
+    @Override
     public synchronized void addComponentListener( GComponentListener listener ) {
         mComponentCaster = GluiMulticaster.add( mComponentCaster, listener );
     }
     
+    @Override
     public synchronized void removeComponentListener( GComponentListener listener ) {
         mComponentCaster = GluiMulticaster.remove( mComponentCaster, listener );
     }
     
+    @Override
     public synchronized void addAncestorListener( GAncestorListener listener ) {
         mAncestorCaster = GluiMulticaster.add( mAncestorCaster, listener );
     }
     
+    @Override
     public synchronized void removeAncestorListener( GAncestorListener listener ) {
         mAncestorCaster = GluiMulticaster.remove( mAncestorCaster, listener );
     }
     
+    @Override
     public synchronized void addFocusListener( GFocusListener listener ) {
         mFocusCaster = GluiMulticaster.add( mFocusCaster, listener );
     }
     
+    @Override
     public synchronized void removeFocusListener( GFocusListener listener ) {
         mFocusCaster = GluiMulticaster.remove( mFocusCaster, listener );
     }
     
+    @Override
     public synchronized void addMouseListener( GMouseListener listener ) {
         boolean prev = hasMouseListener();
         mMouseCaster = GluiMulticaster.add( mMouseCaster, listener );
@@ -282,6 +322,7 @@ public class GPanel implements GComponent {
         }
     }
     
+    @Override
     public synchronized void removeMouseListener( GMouseListener listener ) {
         boolean prev = hasMouseListener();
         mMouseCaster = GluiMulticaster.remove( mMouseCaster, listener );
@@ -290,6 +331,7 @@ public class GPanel implements GComponent {
         }
     }
     
+    @Override
     public synchronized void addMouseMotionListener( GMouseMotionListener listener ) {
         boolean prev = hasMouseListener();
         mMouseMotionCaster = GluiMulticaster.add( mMouseMotionCaster, listener );
@@ -298,6 +340,7 @@ public class GPanel implements GComponent {
         }
     }
     
+    @Override
     public synchronized void removeMouseMotionListener( GMouseMotionListener listener ) {
         boolean prev = hasMouseListener();
         mMouseMotionCaster = GluiMulticaster.remove( mMouseMotionCaster, listener );
@@ -306,6 +349,7 @@ public class GPanel implements GComponent {
         }
     }
 
+    @Override
     public synchronized void addMouseWheelListener( GMouseWheelListener listener ) {
         boolean prev = hasMouseListener();
         mMouseWheelCaster = GluiMulticaster.add( mMouseWheelCaster, listener );
@@ -314,6 +358,7 @@ public class GPanel implements GComponent {
         }
     }
 
+    @Override
     public synchronized void removeMouseWheelListener( GMouseWheelListener listener ) {
         boolean prev = hasMouseListener();
         mMouseWheelCaster = GluiMulticaster.remove( mMouseWheelCaster, listener );
@@ -322,6 +367,7 @@ public class GPanel implements GComponent {
         }
     }
 
+    @Override
     public synchronized void addKeyListener( GKeyListener listener ) {
         boolean prev = hasKeyListener();
         mKeyCaster = GluiMulticaster.add( mKeyCaster, listener );
@@ -330,6 +376,7 @@ public class GPanel implements GComponent {
         }
     }
     
+    @Override
     public synchronized void removeKeyListener( GKeyListener listener ) {
         boolean prev = hasKeyListener();
         mKeyCaster = GluiMulticaster.remove( mKeyCaster, listener );
@@ -338,19 +385,23 @@ public class GPanel implements GComponent {
         }
     }
 
+    @Override
     public synchronized void addPaintListener( GPaintListener listener ) {
         mPaintCaster = GluiMulticaster.add( mPaintCaster, listener );
     }
 
+    @Override
     public synchronized void removePaintListener( GPaintListener listener ) {
         mPaintCaster = GluiMulticaster.remove( mPaintCaster, listener );
     }
     
     
+    @Override
     public synchronized boolean hasKeyListener() {
         return mKeyCaster != null;
     }
     
+    @Override
     public synchronized boolean hasMouseListener() {
         return mMouseCaster != null ||
                mMouseMotionCaster != null ||
@@ -358,18 +409,22 @@ public class GPanel implements GComponent {
     }
     
     
+    @Override
     public boolean hasFocus() {
         return mHasFocus;
     }
     
+    @Override
     public synchronized boolean requestFocus() {
-        if( mDispatcher == null || !GToolkit.isKeyboardFocusable( this ) )
+        if( mDispatcher == null || !GToolkit.isKeyboardFocusable( this ) ) {
             return false;
+        }
                 
         mDispatcher.fireRequestFocus( this );
         return true;
     }
     
+    @Override
     public void transferFocusBackward() {
         GDispatcher d = mDispatcher;
         if( d != null ) {
@@ -377,6 +432,7 @@ public class GPanel implements GComponent {
         }
     }
     
+    @Override
     public void transferFocusForward() {
         GDispatcher d = mDispatcher;
         if( d != null ) {
@@ -384,6 +440,7 @@ public class GPanel implements GComponent {
         }
     }
     
+    @Override
     public void startModal() {
         GDispatcher d = mDispatcher;
         if( d != null ) {
@@ -391,6 +448,7 @@ public class GPanel implements GComponent {
         }
     }
     
+    @Override
     public void stopModal() {
         GDispatcher d = mDispatcher;
         if( d != null ) {
@@ -399,9 +457,11 @@ public class GPanel implements GComponent {
     }
     
     
+    @Override
     public synchronized GComponent componentAt( int x, int y ) {
-        if( !contains( x, y ) )
+        if( !contains( x, y ) ) {
             return null;
+        }
 
         int size = mChildren.size();
 
@@ -416,9 +476,11 @@ public class GPanel implements GComponent {
         return this;
     }
     
+    @Override
     public synchronized GComponent displayedComponentAt( int x, int y ) {
-        if( !mDisplayed || !contains( x, y ) )
+        if( !mDisplayed || !contains( x, y ) ) {
             return null;
+        }
 
         int size = mChildren.size();
         while( size-- > 0 ) {
@@ -432,9 +494,11 @@ public class GPanel implements GComponent {
         return this;
     }
     
+    @Override
     public synchronized GComponent mouseFocusableComponentAt( int x, int y ) {
-        if( !mDisplayed || !contains( x, y ) )
+        if( !mDisplayed || !contains( x, y ) ) {
             return null;
+        }
         
         int size = mChildren.size();
         while( size-- > 0 ) {
@@ -448,9 +512,11 @@ public class GPanel implements GComponent {
         return GToolkit.isMouseFocusable( this ) ? this : null;
     }
     
+    @Override
     public synchronized void applyLayout() {
-        if( mNeedsLayout || mLayout == null )
+        if( mNeedsLayout || mLayout == null ) {
             return;
+        }
         
         mNeedsLayout = true;
         
@@ -459,29 +525,36 @@ public class GPanel implements GComponent {
         }
     }
 
+    @Override
     public boolean needsLayout() {
         return mNeedsLayout;
     }
 
+    @Override
     public synchronized void repaint() {
-        if( mNeedsPaint || mDispatcher == null )
+        if( mNeedsPaint || mDispatcher == null ) {
             return;
+        }
 
         mNeedsPaint = true;
     }
     
+    @Override
     public boolean needsRepaint() {
         return mNeedsPaint;
     }
 
+    @Override
     public GDispatcher dispatcher() {
         return mDispatcher;
     }
     
     
+    @Override
     public synchronized void treeProcessParentChanged( GDispatcher dispatcher, GComponent parent ) {
-        if( dispatcher == mDispatcher && parent == mParent )
+        if( dispatcher == mDispatcher && parent == mParent ) {
             return;
+        }
 
         
         GDispatcher out = dispatcher != null ? dispatcher : mDispatcher;
@@ -515,6 +588,7 @@ public class GPanel implements GComponent {
         }
     }
     
+    @Override
     public synchronized void treeProcessAncestorMoved( GComponent source ) {
         mAbsoluteBounds = null;
     
@@ -537,6 +611,7 @@ public class GPanel implements GComponent {
         }
     }
     
+    @Override
     public synchronized void treeProcessAncestorResized( GComponent source ) {
         mAbsoluteBounds = null;
         
@@ -559,6 +634,7 @@ public class GPanel implements GComponent {
         }
     }
     
+    @Override
     public synchronized void treeProcessParentShown() {
         if( updateDisplayed() && !mChildren.isEmpty() ) {
             for( GComponent c: mChildren ) {
@@ -567,6 +643,7 @@ public class GPanel implements GComponent {
         }
     }
     
+    @Override
     public synchronized void treeProcessParentHidden() {
         if( updateDisplayed() && !mChildren.isEmpty() ) { 
             for( GComponent c: mChildren ) {
@@ -576,6 +653,7 @@ public class GPanel implements GComponent {
     }
     
     
+    @Override
     public void treeProcessLayout() {
         GLayout m;
         
@@ -595,17 +673,22 @@ public class GPanel implements GComponent {
         }
     }
     
+    @Override
     public void processPaint( GGraphics g ) {
-        if( !mDisplayed ) return;
+        if( !mDisplayed ) {
+            return;
+        }
         mNeedsPaint = false;
         paintComponent( g );
         paintChildren( g );
     }
     
+    @Override
     public void processComponentEvent( GComponentEvent e ) {
         GComponentListener c = mComponentCaster;
-        if( c == null )
+        if( c == null ) {
             return;
+        }
 
         switch( e.id() ) {
         case GComponentEvent.COMPONENT_MOVED:
@@ -626,10 +709,12 @@ public class GPanel implements GComponent {
         }
     }
     
+    @Override
     public void processAncestorEvent( GAncestorEvent e ) {
         GAncestorListener c = mAncestorCaster;
-        if( c == null )
+        if( c == null ) {
             return;
+        }
         
         switch( e.id() ) {
         case GAncestorEvent.ANCESTOR_CHANGED:
@@ -646,6 +731,7 @@ public class GPanel implements GComponent {
         }
     }
     
+    @Override
     public void processFocusEvent( GFocusEvent e ) {
         GFocusListener f = mFocusCaster;
         
@@ -665,10 +751,12 @@ public class GPanel implements GComponent {
         }
     }
 
+    @Override
     public void processMouseEvent( GMouseEvent e ) {
         GMouseListener m = mMouseCaster;
-        if( m == null )
+        if( m == null ) {
             return;
+        }
 
         switch( e.id() ) {
         case GMouseEvent.MOUSE_PRESSED:
@@ -691,10 +779,12 @@ public class GPanel implements GComponent {
         e.consume();
     }
 
+    @Override
     public void processMouseMotionEvent( GMouseEvent e ) {
         GMouseMotionListener m = mMouseMotionCaster;
-        if( m == null )
+        if( m == null ) {
             return;
+        }
 
         if( e.id() == MouseEvent.MOUSE_MOVED ) {
             m.mouseMoved( e );
@@ -705,19 +795,23 @@ public class GPanel implements GComponent {
         e.consume();
     }
     
+    @Override
     public void processMouseWheelEvent( GMouseWheelEvent e ) {
         GMouseWheelListener m = mMouseWheelCaster;
-        if( m == null )
+        if( m == null ) {
             return;
+        }
 
         m.mouseWheelMoved( e );
         e.consume();
     }
     
+    @Override
     public void processKeyEvent( GKeyEvent e ) {
         GKeyListener m = mKeyCaster;
-        if( m == null )
+        if( m == null ) {
             return;
+        }
 
         switch( e.id() ) {
         case GKeyEvent.KEY_PRESSED:
@@ -735,8 +829,6 @@ public class GPanel implements GComponent {
     }
     
     
-    
-    
     protected void paintComponent( GGraphics g ) {
         GPaintListener c = mPaintCaster;
         if( c != null ) {
@@ -745,11 +837,10 @@ public class GPanel implements GComponent {
     }
     
     protected void paintChildren( GGraphics g ) {
-        if( mChildren.isEmpty() )
+        if( mChildren.isEmpty() ) {
             return;
+        }
         
-        GL gl = g.gl();
-
         for( GComponent p : mChildren ) {
             if( p.isDisplayed() ) {
                 prepareView( g, p );
@@ -802,8 +893,9 @@ public class GPanel implements GComponent {
                             mVisible &&
                             ( mParent == null || mParent.isDisplayed() );
         
-        if( mDisplayed == displayed )
+        if( mDisplayed == displayed ) {
             return false;
+        }
         
         mDisplayed = displayed;
         

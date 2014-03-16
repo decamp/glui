@@ -7,17 +7,12 @@ import bits.glui.event.GPaintListener;
 import bits.glui.text.FontTexture;
 import static javax.media.opengl.GL.*;
 
-
-
-
-
 /**
- * @author decamp
+ * @author Philip DeCamp
  */
 public class GLabel extends GPanel implements GPaintListener {
 
-    private static final int    DEFAULT_FONT_SIZE  = 12;
-    
+   
     private String mText;
     private float mHorSrc   = 0.5f;
     private float mHorDst   = 0.5f;

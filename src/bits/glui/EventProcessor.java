@@ -164,7 +164,7 @@ class EventProcessor {
     }
 
 
-    
+    @SuppressWarnings( "unused" )    
     public void processPaint( GComponent source ) {
         if( mAwtOwner != null ) {
             mAwtOwner.repaint();
@@ -272,7 +272,8 @@ class EventProcessor {
         validateMouse();
     }
     
-    
+
+    @SuppressWarnings( "unused" )
     public void processPropertyChange( GComponent source, String prop, Object oldValue, Object newValue ) {
         if( prop == GComponent.PROP_DISPLAYED || prop == GComponent.PROP_ENABLED ) {
             validateMouse();

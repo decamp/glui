@@ -59,12 +59,10 @@ public class FontTexture {
         
         int dim    = 256;
         int margin = 4;
-        FontRenderContext context = mMetrics.getFontRenderContext();
-        
         computeGlyphSizes( mMetrics, margin, mGlyphs );
         
         // Brute force size determination.  Whatevs.
-        while( !layoutGlyphs( mMetrics, dim, dim, margin, mGlyphs, null ) ) {
+        while( !layoutGlyphs( dim, dim, mGlyphs, null ) ) {
             dim <<= 1;
             if( dim > 1024 * 4 ) {
                 throw new InstantiationError( "Font size too large for memory: " + mFont.getSize() );
@@ -79,7 +77,7 @@ public class FontTexture {
         g.clearRect( 0, 0, dim, dim );
         g.setColor( Color.WHITE );
         
-        layoutGlyphs( mMetrics, dim, dim, margin, mGlyphs, g );
+        layoutGlyphs( dim, dim, mGlyphs, g );
         mGlyphs.optimize();
         
         //ImagePanel.showImage( im );
@@ -563,9 +561,7 @@ public class FontTexture {
     }
     
     
-    private static boolean layoutGlyphs( FontMetrics metrics, int texWidth, int texHeight, int margin, GlyphMap glyphs, Graphics2D g ) {
-        final Font font = metrics.getFont();
-        final FontRenderContext context = metrics.getFontRenderContext();
+    private static boolean layoutGlyphs( int texWidth, int texHeight, GlyphMap glyphs, Graphics2D g ) {
         final CharSequence chars = glyphs.chars();
         final int len = chars.length();
         final char[] carr = new char[1];
@@ -667,7 +663,6 @@ public class FontTexture {
         }
         
         
-        
         void dispose( GL gl ) {
             if( mId[0] != 0 ) {
                 gl.glDeleteTextures( 1, mId, 0 );
@@ -686,10 +681,6 @@ public class FontTexture {
             gl.glBindTexture( GL_TEXTURE_2D, mId[0] );
         }
         
-        void unbind( GL gl ) {
-            gl.glBindTexture( GL_TEXTURE_2D, 0 );
-        }
-        
         void pushDraw( GL gl ) {
             gl.glGetIntegerv( GL_TEXTURE_2D, mRevert, 0 );
             gl.glGetIntegerv( GL_TEXTURE_BINDING_2D, mRevert, 1 );
@@ -703,7 +694,6 @@ public class FontTexture {
             }
             gl.glBindTexture( GL_TEXTURE_2D, mRevert[1] );
         }
-        
         
         
         private synchronized void init( GL gl ) {

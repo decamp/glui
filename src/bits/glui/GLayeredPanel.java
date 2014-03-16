@@ -9,7 +9,7 @@ import java.util.*;
  * and second by insertion order. By default, children are added to
  * layer 0. Layer 1 is "above" of layer 0. Layer -1 is "below" layer 0.
  * 
- * @author decamp
+ * @author Philip DeCamp
  */
 public class GLayeredPanel extends GPanel {
     
