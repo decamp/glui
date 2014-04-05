@@ -8,4 +8,4 @@
 /build*/
 /dist/
 /resources_ext/
-
+*.iml
