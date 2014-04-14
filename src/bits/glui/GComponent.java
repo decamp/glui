@@ -40,7 +40,7 @@ public interface GComponent {
     
     /**
      * @return true iff these conditions are all true: <br/>
-     *        This component has been placed in a component hierarchy with valid root.
+     *        This component has been placed in a component hierarchy with valid pane.
      *        This component is visible.
      *        All ancestors of this component are visible.
      */

@@ -31,7 +31,8 @@ class EventQueue implements GDispatcher {
     public boolean ignoreRepaints() {
         return mIgnoreRepaints;
     }
-    
+
+
     public void ignoreRepaints( boolean ignoreRepaints ) {
         mIgnoreRepaints = ignoreRepaints;
     }
@@ -53,7 +54,8 @@ class EventQueue implements GDispatcher {
         item.mCall   = PROCESS_PAINT;
         q.offer( item );
     }
-    
+
+
     public synchronized void fireLayout( GComponent source ) {
         Queue q = mQueues[PRIORITY_LAYOUT];
         Item item = q.mHead;
@@ -71,56 +73,64 @@ class EventQueue implements GDispatcher {
         item.mCall = PROCESS_APPLY_LAYOUT;
         q.offer( item );
     }
-    
+
+
     public synchronized void fireRequestFocus( GComponent source ) {
         Item item = getItem();
         item.mSource    = source;
         item.mCall = PROCESS_REQUEST_FOCUS;
         mQueues[PRIORITY_OTHER].offer( item );
     }
-    
+
+
     public synchronized void fireTransferFocusBackward( GComponent source ) {
         Item item = getItem();
         item.mSource    = source;
         item.mCall = PROCESS_TRANSFER_FOCUS_FORWARD;
         mQueues[PRIORITY_OTHER].offer( item );
     }
-    
+
+
     public synchronized void fireTransferFocusForward( GComponent source ) {
         Item item = getItem();
         item.mSource    = source;
         item.mCall = PROCESS_TRANSFER_FOCUS_BACKWARD;
         mQueues[PRIORITY_OTHER].offer( item );
     }
-    
+
+
     public synchronized void firePushInputRoot( GComponent source ) {
         Item item = getItem();
         item.mSource    = source;
         item.mCall = PROCESS_PUSH_INPUT_ROOT;
         mQueues[PRIORITY_OTHER].offer( item );
     }
-    
+
+
     public synchronized void firePopInputRoot( GComponent source ) {
         Item item = getItem();
         item.mSource    = source;
         item.mCall = PROCESS_POP_INPUT_ROOT;
         mQueues[PRIORITY_OTHER].offer( item );
     }
-    
+
+
     public synchronized void fireComponentEvent( GComponentEvent event ) {
         Item item = getItem();
         item.mObject1 = event;
         item.mCall = PROCESS_COMPONENT_EVENT;
         mQueues[PRIORITY_OTHER].offer( item );
     }
-    
+
+
     public synchronized void fireAncestorEvent( GAncestorEvent event ) {
         Item item = getItem();
         item.mObject1 = event;
         item.mCall = PROCESS_ANCESTOR_EVENT;
         mQueues[PRIORITY_OTHER].offer( item );
     }
-    
+
+
     public synchronized void firePropertyChange( GComponent source, String prop, Object oldValue, Object newValue ) {
         Item item = getItem();
         item.mSource  = source;
@@ -130,15 +140,15 @@ class EventQueue implements GDispatcher {
         item.mCall    = PROCESS_PROPERTY_CHANGE;
         mQueues[PRIORITY_OTHER].offer( item );
     }
-    
+
+
     public synchronized void fireRunnable( Runnable r ) {
         Item item = getItem();
         item.mObject1 = r;
         item.mCall    = PROCESS_RUN;
         mQueues[PRIORITY_OTHER].offer( item );
     }
-    
-    
+
     
     boolean processAllEvents( EventProcessor processor ) {
         Item item   = null;
@@ -170,8 +180,7 @@ class EventQueue implements GDispatcher {
             }
         }
     }
-    
-    
+
     
     private Item getItem() {
         if( mItemPool == null ) {

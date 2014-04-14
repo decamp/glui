@@ -3,7 +3,6 @@ package bits.glui;
 import bits.glui.event.*;
 
 public interface GDispatcher {
-    
     public void fireLayout( GComponent source );
     public void firePaint( GComponent source );
     public void fireRequestFocus( GComponent source );
@@ -15,6 +14,10 @@ public interface GDispatcher {
     public void fireAncestorEvent( GAncestorEvent event );
     
     public void firePropertyChange( GComponent source, String prop, Object oldValue, Object newValue );
-        
+
     public void fireRunnable( Runnable run );
+
+    public boolean ignoreRepaints();
+    public void ignoreRepaints( boolean ignoreRepaints );
+
 }

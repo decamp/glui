@@ -222,9 +222,9 @@ public class GKeyEvent extends GInputEvent {
                       long timestampMicros, 
                       int modifiers, 
                       int keyCode, 
-                      char keyChar) 
+                      char keyChar )
     {
-        this(source, id, timestampMicros, modifiers, keyCode, keyChar, KEY_LOCATION_UNKNOWN);
+        this( source, id, timestampMicros, modifiers, keyCode, keyChar, KEY_LOCATION_UNKNOWN );
     }
 
     
@@ -234,10 +234,9 @@ public class GKeyEvent extends GInputEvent {
                       int modifiers, 
                       int keyCode, 
                       char keyChar, 
-                      int keyLocation) 
+                      int keyLocation )
     {
-        super(source, id, timestampMicros, modifiers);
-        
+        super( source, id, timestampMicros, modifiers );
         mKeyCode     = keyCode;
         mKeyChar     = keyChar;
         mKeyLocation = keyLocation;
@@ -261,7 +260,7 @@ public class GKeyEvent extends GInputEvent {
 
     
     public boolean isActionKey() {
-        switch (mKeyCode) {
+        switch ( mKeyCode ) {
         case VK_HOME:
         case VK_END:
         case VK_PAGE_UP:
@@ -348,16 +347,15 @@ public class GKeyEvent extends GInputEvent {
         return false;
     }
 
-    
-    
-    public static String getKeyModifiersText(int modifiers) {
-        return KeyEvent.getKeyModifiersText(modifiers);
+
+    public static String getKeyModifiersText( int modifiers ) {
+        return KeyEvent.getKeyModifiersText( modifiers );
     }
-    
-    
-    public static String getKeyText(int keyCode) {
-        return KeyEvent.getKeyText(keyCode);
+
+
+    public static String getKeyText( int keyCode ) {
+        return KeyEvent.getKeyText( keyCode );
     }
-    
-    
+
+
 }

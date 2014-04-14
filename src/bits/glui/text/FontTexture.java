@@ -628,7 +628,7 @@ public class FontTexture {
         int count     = in.getSize() * in.getNumBanks();
         
         if( DataBuffer.getDataTypeSize( in.getDataType() ) != 8 ) {
-            throw new IllegalArgumentException( "Invalid image type. Image must by 8-bit grayscale." );
+            throw new IllegalArgumentException( "Invalid image keyTyped. Image must by 8-bit grayscale." );
         }
         
         ByteBuffer ret = ByteBuffer.allocateDirect( ( ( count + 7 ) / 8 ) * 8 );

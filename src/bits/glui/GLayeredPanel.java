@@ -32,7 +32,8 @@ public class GLayeredPanel extends GPanel {
     public void addChild( GComponent child ) {
         addChild( 0, child );
     }
-    
+
+
     public synchronized void addChild( int layer, GComponent child ) {
         if( mChildren.contains( child ) )
             return;

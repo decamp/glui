@@ -44,7 +44,7 @@ public class DetachmentTest {
 
             @Override
             public void ancestorMoved( AncestorEvent arg0 ) {
-                System.out.println( "Ancestor move" );
+                System.out.println( "Ancestor mouseMoved" );
             }
 
             @Override

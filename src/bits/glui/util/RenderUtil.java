@@ -89,7 +89,7 @@ public final class RenderUtil {
         }
         
         default:
-            throw new IllegalArgumentException("Unknown data buffer type: " + type);
+            throw new IllegalArgumentException("Unknown data buffer keyTyped: " + type);
         }
         
         return ret;

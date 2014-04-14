@@ -556,9 +556,7 @@ public class GPanel implements GComponent {
             return;
         }
 
-        
         GDispatcher out = dispatcher != null ? dispatcher : mDispatcher;
-        
         mDispatcher     = dispatcher;
         mParent         = parent;
         mAbsoluteBounds = null;
@@ -570,7 +568,6 @@ public class GPanel implements GComponent {
         }
         
         updateDisplayed( out );
-        
         mNeedsLayout = false;
         mNeedsPaint  = false;
         applyLayout();
@@ -580,7 +577,6 @@ public class GPanel implements GComponent {
         }
         
         mDispatcher = dispatcher;
-        
         if( !mChildren.isEmpty() ) {
             for( GComponent c: mChildren ) {
                 c.treeProcessParentChanged( dispatcher, this );
@@ -835,7 +831,8 @@ public class GPanel implements GComponent {
             c.paint( g );
         }
     }
-    
+
+
     protected void paintChildren( GGraphics g ) {
         if( mChildren.isEmpty() ) {
             return;
@@ -848,7 +845,8 @@ public class GPanel implements GComponent {
             }
         }
     }
-    
+
+
     protected void prepareView( GGraphics g, GComponent p ) {
         GL gl = g.gl();
 
@@ -872,12 +870,14 @@ public class GPanel implements GComponent {
         gl.glViewport( x, y, w, h );
         // gl.glScissor(x, y, w, h);
     }
-    
+
+
     protected void childAdded( GComponent child ) {
         child.treeProcessParentChanged( mDispatcher, this );
         applyLayout();        
     }
-    
+
+
     protected void childRemoved( GComponent child ) {
         child.treeProcessParentChanged( null, null );
         applyLayout();
@@ -887,7 +887,8 @@ public class GPanel implements GComponent {
     private synchronized boolean updateDisplayed() {
         return updateDisplayed( mDispatcher );
     }
-    
+
+
     private boolean updateDisplayed( GDispatcher out ) {
         boolean displayed = mDispatcher!= null &&
                             mVisible &&

@@ -63,7 +63,7 @@ public class TestFocus {
     }
 
 
-    private static class Panel extends GPanel implements GMouseListener, GMouseMotionListener, GFocusListener, GKeyListener {
+    private static class Panel extends GPanel implements GMouseListener, GMouseMotionListener, GMouseWheelListener, GFocusListener, GKeyListener {
 
         private final int mIndex;
         private boolean mHasFocus = false;
@@ -76,6 +76,7 @@ public class TestFocus {
             mIndex = index;
             addMouseListener( this );
             addMouseMotionListener( this );
+            addMouseWheelListener( this );
             addFocusListener( this );
             addKeyListener( this );
         }
@@ -203,6 +204,10 @@ public class TestFocus {
             return "Panel " + mIndex;
         }
 
+        @Override
+        public void mouseWheelMoved( GMouseWheelEvent e ) {
+            System.out.println( mIndex + " scrolled " + e.getScrollType() + "\t" + e.getScrollAmount() + "\t" + e.getWheelRotation() );
+        }
     }
 
 }

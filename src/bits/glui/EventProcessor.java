@@ -10,13 +10,13 @@ import bits.glui.event.*;
 /**
  * @author decamp
  */
-class EventProcessor {
+class EventProcessor implements GHumanInputController {
 
-    
-    private static final int ALL_BUTTON_MASK = MouseEvent.BUTTON1_DOWN_MASK |
-                                               MouseEvent.BUTTON2_DOWN_MASK |
-                                               MouseEvent.BUTTON3_DOWN_MASK;
-    
+
+    private static final int ALL_BUTTONS_MASK = MouseEvent.BUTTON1_DOWN_MASK |
+                                                MouseEvent.BUTTON2_DOWN_MASK |
+                                                MouseEvent.BUTTON3_DOWN_MASK;
+
     private static final int[] BUTTON_MASKS = { GMouseEvent.BUTTON1_DOWN_MASK,
                                                 GMouseEvent.BUTTON2_DOWN_MASK,
                                                 GMouseEvent.BUTTON3_DOWN_MASK };
@@ -25,146 +25,50 @@ class EventProcessor {
                                               GMouseEvent.BUTTON2,
                                               GMouseEvent.BUTTON3 };
 
+    private static final long DOUBLE_CLICK_TIMEOUT = 500000L;
+
+
     private final Component  mAwtOwner;
     private final GComponent mOwner;
-    
-    private GComponent mInputRoot = null;
-    private GComponent mFocus     = null;
-    private final Stack<InputFrame> mInputStack = new Stack<InputFrame>();
-    
-    private int mMouseX    = Integer.MIN_VALUE;
-    private int mMouseY    = Integer.MIN_VALUE;
-    private int mMouseMods = 0;
-    
-    private GComponent mMouseLocation    = null;
-    private GComponent mMouseButtonFocus = null;
-    private GComponent mMouseClickFocus  = null;
-    
-    
-    private GFocusTraversalPolicy mFocusPolicy = new GChildOrderTraversalPolicy();
 
-    
-    
+    private final ModifierState   mMods;
+    private final FocusController mFocusCont;
+    private final KeyController   mKeyCont;
+    private final MouseController mMouseCont;
+
+    private final Stack<InputFrame> mInputStack = new Stack<InputFrame>();
+    private       GComponent        mRoot       = null;
+
+
     EventProcessor( Component awtOwner, GComponent owner ) {
-        mAwtOwner  = awtOwner;
-        mOwner     = owner;
-        mInputRoot = owner;
+        mAwtOwner = awtOwner;
+        mOwner = owner;
+        mRoot = owner;
+
+        mMods = new ModifierState();
+        mFocusCont = new FocusController( owner, awtOwner );
+        mKeyCont   = new KeyController( mFocusCont, mMods );
+        mMouseCont = new MouseController( mMods, owner );
     }
     
     
     public void validate() {
-        validateRoot();
-        validateFocus( mOwner, false );
-        validateMouse();
-    }
-    
+        InputFrame revert = null;
 
-    public void processMousePressedEvent( MouseEvent e, int ex, int ey ) {
-        cache( e, ex, ey );
-
-        if( mMouseButtonFocus == null ) {
-            mMouseButtonFocus = mMouseLocation;
+        while( !isChild( mOwner, mRoot ) && !mInputStack.isEmpty() ) {
+            revert = mInputStack.pop();
+            mRoot = revert.mRoot;
         }
 
-        if( mMouseButtonFocus != null ) {
-            resendMouse( e, MouseEvent.MOUSE_PRESSED, mMouseButtonFocus );
-        } else {
-            // Mouse has been pressed over no focusable component,
-            // so nothing will receive click events.
-            mMouseClickFocus = null;
+        if( revert == null ) {
+            return;
         }
-    }
-    
-    
-    public void processMouseReleasedEvent( MouseEvent e, int ex, int ey ) {
-        cache( e, ex, ey );
-        
-        if( mMouseButtonFocus != null ) {
-            resendMouse( e, MouseEvent.MOUSE_RELEASED, mMouseButtonFocus );
 
-            if( ( e.getModifiersEx() & ALL_BUTTON_MASK) == 0 ) {
-                mMouseClickFocus = mMouseButtonFocus;
-                mMouseButtonFocus = null;
-            }
-        }
+        mFocusCont.setRoot( revert.mRoot, revert.mFocus );
+        mMouseCont.setRoot( revert.mRoot );
     }
 
 
-    public void processMouseClickedEvent( MouseEvent e, int ex, int ey ) {
-        cache( e, ex, ey );
-
-        if( mMouseClickFocus != null ) {
-            resendMouse( e, MouseEvent.MOUSE_CLICKED, mMouseClickFocus );
-        }
-    }
-
-
-    public void processMouseEnteredEvent( MouseEvent e, int ex, int ey ) {
-        cache( e, ex, ey );
-        updateMouseLocation( e );
-    }
-    
-    
-    public void processMouseExitedEvent( MouseEvent e, int ex, int ey ) {
-        cache( e, ex, ey );
-        setMouseLocationComponent( e, null );
-    }
-    
-    
-    public void processMouseMovedEvent( MouseEvent e, int ex, int ey ) {
-        cache( e, ex, ey );
-
-        if( updateMouseLocation( e ) ) {
-            resendMouseMotion( e, -1, mMouseLocation );
-        }
-    }
-
-
-    public void processMouseDraggedEvent( MouseEvent e, int ex, int ey ) {
-        cache( e, ex, ey );
-
-        updateMouseLocation( e );
-
-        if( mMouseButtonFocus != null ) {
-            resendMouseMotion( e, -1, mMouseButtonFocus );
-        }
-    }
-
-
-    public void processMouseWheelMovedEvent( MouseWheelEvent e, int ex, int ey ) {
-        cache( e, ex, ey );
-
-        if( mMouseLocation != null ) {
-            resendMouseWheel( e, -1, mMouseLocation );
-        }
-    }
-
-
-    public void processKeyPressedEvent( KeyEvent e ) {
-        GComponent focus = mFocus;
-        if( focus != null ) {
-            resendKey( e, -1, focus );
-        }
-    }
-    
-    
-    public void processKeyReleasedEvent( KeyEvent e ) {
-        GComponent focus = mFocus;
-        if( focus != null ) {
-            resendKey( e, -1, focus );
-        }
-    }
-
-
-    public void processKeyTypedEvent( KeyEvent e ) {
-        GComponent focus = mFocus;
-        if( focus != null ) {
-            resendKey( e, -1, focus );
-        }
-    }
-
-
-    @SuppressWarnings( "unused" )    
     public void processPaint( GComponent source ) {
         if( mAwtOwner != null ) {
             mAwtOwner.repaint();
@@ -175,418 +79,171 @@ class EventProcessor {
     public void processLayout( GComponent source ) {
         source.treeProcessLayout();
     }
-    
-    
+
+
     public void processRequestFocus( GComponent source ) {
-        GComponent focus = mFocus;
-
-        if( mAwtOwner != null && !mAwtOwner.hasFocus() ) {
-            mAwtOwner.requestFocus();
-        }
-
-        if( focus == source ) {
-            return;
-        }
-
-        if( source == null || isChild( mInputRoot, source ) ) {
-            changeFocus( source, source, false );
-        }
+        mFocusCont.requestFocus( source );
     }
-    
-    
+
+
     public void processTransferFocusBackward( GComponent source ) {
-        GComponent focus = mFocus;
-        GComponent root = mInputRoot;
-
-        if( focus != source )
-            return;
-
-        GComponent target = mFocusPolicy.getComponentBefore( root, focus );
-
-        if( target != focus ) {
-            changeFocus( source, target, false );
-        }
+        mFocusCont.transferFocusBackward( source );
     }
-    
-    
+
+
     public void processTransferFocusForward( GComponent source ) {
-        GComponent focus = mFocus;
-        GComponent root = mInputRoot;
-
-        if( focus != source )
-            return;
-
-        GComponent target = mFocusPolicy.getComponentAfter( root, focus );
-
-        if( target != focus ) {
-            changeFocus( source, target, false );
-        }
+        mFocusCont.transferFocusForward( source );
     }
 
 
     public void processPushInputRoot( GComponent source ) {
-        GComponent root = mInputRoot;
-
-        if( source == null || source == root || !isChild( root, source ) )
+        GComponent root = mRoot;
+        if( source == null || source == root || !isChild( root, source ) ) {
             return;
+        }
 
-        mInputStack.push( new InputFrame( root, mFocus ) );
-        mInputRoot = source;
-
-        // Update focus.
-        initFocus( source, true );
-        
-        // Update mouse focus.
-        validateMouse();
+        mInputStack.push( new InputFrame( root, mFocusCont.focus() ) );
+        mRoot = source;
+        mMouseCont.setRoot( source );
+        mFocusCont.setRoot( source, null );
     }
 
 
     public void processPopInputRoot( GComponent source ) {
-        int frame = mInputStack.size() - 1;
-        if( frame < 0 )
+        int idx = mInputStack.size() - 1;
+        if( idx < 0 ) {
             return;
+        }
 
-        if( source != mInputRoot ) {
-            while( frame > 0 ) {
-                if( mInputStack.get( frame ).mRoot == source )
+        if( source != mRoot ) {
+            while( idx > 0 ) {
+                if( mInputStack.get( idx ).mRoot == source ) {
                     break;
-
-                frame--;
+                }
+                idx--;
             }
 
-            if( frame == 0 )
+            if( idx == 0 ) {
                 return;
-
-            frame--;
+            }
+            idx--;
         }
 
         // Pop input stack until desired frame is reached.
-        while( mInputStack.size() > frame ) {
-            InputFrame f = mInputStack.pop();
-            mInputRoot = f.mRoot;
-
-            changeFocus( source, f.mFocus, false );
+        while( mInputStack.size() > idx ) {
+            InputFrame frame = mInputStack.pop();
+            mRoot = frame.mRoot;
+            mMouseCont.setRoot( frame.mRoot );
+            mFocusCont.setRoot( frame.mRoot, frame.mFocus );
         }
-
-        // Update mouse focus.
-        validateMouse();
     }
-    
 
-    @SuppressWarnings( "unused" )
+
     public void processPropertyChange( GComponent source, String prop, Object oldValue, Object newValue ) {
         if( prop == GComponent.PROP_DISPLAYED || prop == GComponent.PROP_ENABLED ) {
-            validateMouse();
-            validateFocus( source, false ); 
+            mFocusCont.validate( source );
+            mMouseCont.validate();
         } else if( prop == GComponent.PROP_HAS_MOUSE_LISTENER ) {
-            validateMouse();
+            mMouseCont.validate();
         } else if( prop == GComponent.PROP_HAS_KEY_LISTENER ) {
-            validateFocus( source, false );
-        }
-    }
-    
-    
-    
-    
-    private void validateRoot() {
-        while( !isChild( mOwner, mInputRoot ) && !mInputStack.isEmpty() ) {
-            InputFrame f = mInputStack.pop();
-            mInputRoot = f.mRoot;
-            changeFocus( mOwner, f.mFocus, false );
-        }
-    }
-    
-    
-    private void validateFocus( GComponent source, boolean temporary ) {
-        GComponent root  = mInputRoot;
-        GComponent focus = mFocus;
-        
-        if( focus == null || !GToolkit.isKeyboardFocusable( focus ) || !isChild( root, focus ) ) {
-            initFocus( source, temporary );
-        }
-    }
-    
-    
-    private void validateMouse() {
-        GComponent root  = mInputRoot;
-        GComponent focus = mMouseButtonFocus;
-        
-        if( focus != null && ( !GToolkit.isMouseFocusable( focus ) || !isChild( root, focus ) ) ) {
-            forceMouseRelease( focus );
-            mMouseButtonFocus = null;
-            mMouseClickFocus  = null;
-        }
-        
-        initMouseLocation();
-    }
-    
-    
-    private void initFocus( GComponent source, boolean temporary ) {
-        GComponent target = mInputRoot;
-        target = mFocusPolicy.getDefaultComponent( target );
-
-        if( target != mFocus ) {
-            changeFocus( source, target, temporary );
+            mFocusCont.validate(  source );
         }
     }
 
 
-    private void changeFocus( GComponent source, GComponent target, boolean temporary ) {
-        GComponent c = mFocus;
-        if( c == target )
-            return;
+    @Override
+    public boolean keyTyped( long micros, int mods, int keyCode, char keyChar, int keyLoc ) {
+        return mKeyCont.keyTyped( micros, mods, keyCode, keyChar, keyLoc );
+    }
 
-        if( source == null )
-            source = mOwner;
+    @Override
+    public boolean keyPressed( int keyCode, char keyChar, int keyLoc ) {
+        return mKeyCont.keyPressed( keyCode, keyChar, keyLoc );
+    }
 
-        mFocus = null;
+    @Override
+    public boolean keyPressed( long micros, int mods, int keyCode, char keyChar, int keyLoc ) {
+        return mKeyCont.keyPressed( micros, mods, keyCode, keyChar, keyLoc );
+    }
 
-        GFocusEvent e;
+    @Override
+    public boolean keyReleased( int keyCode, char keyChar, int keyLoc ) {
+        return mKeyCont.keyReleased( keyCode, keyChar, keyLoc );
+    }
 
-        if( c != null ) {
-            e = new GFocusEvent( source, GFocusEvent.FOCUS_LOST, temporary, target );
-            c.processFocusEvent( e );
-        }
+    @Override
+    public boolean keyReleased( long micros, int mods, int keyCode, char keyChar, int keyLoc ) {
+        return mKeyCont.keyReleased( micros, mods, keyCode, keyChar, keyLoc );
+    }
 
-        if( target != null ) {
-            e = new GFocusEvent( source, GFocusEvent.FOCUS_GAINED, temporary, c );
-            target.processFocusEvent( e );
-        }
+    @Override
+    public boolean keyTyped( int keyCode, char keyChar, int keyLoc ) {
+        return mKeyCont.keyTyped( keyCode, keyChar, keyLoc );
+    }
 
-        mFocus = target;
+    @Override
+    public boolean mousePressed( int button ) {
+        return mMouseCont.mousePressed( button );
+    }
+
+    @Override
+    public boolean mousePressed( long micros, int mods, int button, int clickCount, boolean trigger ) {
+        return mMouseCont.mousePressed( micros, mods, button, clickCount, trigger );
+    }
+
+    @Override
+    public boolean mouseReleased( int button ) {
+        return mMouseCont.mouseReleased( button );
+    }
+
+    @Override
+    public boolean mouseReleased( long micros, int mods, int button, int clickCount, boolean trigger ) {
+        return mMouseCont.mouseReleased( micros, mods, button, clickCount, trigger );
+    }
+
+    @Override
+    public boolean mouseEntered( int x, int y ) {
+        return mMouseCont.mouseEntered( x, y );
+    }
+
+    @Override
+    public boolean mouseEntered( long micros, int mods, int x, int y ) {
+        return mMouseCont.mouseEntered( micros, mods, x, y );
+    }
+
+    @Override
+    public boolean mouseExited() {
+        return mMouseCont.mouseExited();
+    }
+
+    @Override
+    public boolean mouseExited( long micros, int mods ) {
+        return mMouseCont.mouseExited( micros, mods );
+    }
+
+    @Override
+    public boolean mouseMoved( int x, int y ) {
+        return mMouseCont.mouseMoved( x, y );
+    }
+
+    @Override
+    public boolean mouseMoved( long micros, int mods, int x, int y ) {
+        return mMouseCont.mouseMoved( micros, mods, x, y );
+    }
+
+    @Override
+    public boolean mouseWheelMoved( long micros, int mods, int scrollType, int scrollAmount, int wheelRotation ) {
+        return mMouseCont.mouseWheelMoved( micros, mods, scrollType, scrollAmount, wheelRotation );
+    }
+
+    @Override
+    public boolean mouseWheelMoved( int scrollType, int scrollAmount, int wheelRotation ) {
+        return mMouseCont.mouseWheelMoved( scrollType, scrollAmount, wheelRotation );
     }
 
 
 
-    private void cache( MouseEvent e, int ex, int ey ) {
-        mMouseX = ex;
-        mMouseY = ey;
-        mMouseMods = e.getModifiers() | e.getModifiersEx();
-    }
-
-
-    private void sendMouse( int id, GComponent source ) {
-        Box bounds = source.absoluteBounds();
-
-        GMouseEvent e = new GMouseEvent( source,
-                                         id,
-                                         System.currentTimeMillis() * 1000L,
-                                         mMouseMods,
-                                         mMouseX - bounds.x(),
-                                         mMouseY - bounds.y(),
-                                         0,
-                                         false,
-                                         0 );
-        
-        source.processMouseEvent( e );
-    }
-
-    
-    private void forceMouseRelease( GComponent source ) {
-        Box bounds = source.absoluteBounds();
-        int ex     = mMouseX - bounds.x();
-        int ey     = mMouseY - bounds.y();
-        int mods   = mMouseMods;
-        long when  = System.currentTimeMillis() * 1000L;
-        
-        for( int i = 0; i < BUTTON_MASKS.length; i++ ) {
-            if( ( mMouseMods & BUTTON_MASKS[i] ) != 0 ) {
-                mods &= ~BUTTON_MASKS[i];
-                
-                GMouseEvent e = new GMouseEvent( source,
-                                                 GMouseEvent.MOUSE_RELEASED,
-                                                 when,
-                                                 mods,
-                                                 ex,
-                                                 ey,
-                                                 0,
-                                                 false,
-                                                 BUTTON_IDS[i] );
-                
-                source.processMouseEvent( e );
-            }
-        }
-    }
-
-
-    private void resendMouse( MouseEvent e, int newId, GComponent source ) {
-        Box bounds = source.absoluteBounds();
-
-        GMouseEvent e2 = new GMouseEvent( source,
-                newId < 0 ? e.getID() : newId,
-                e.getWhen() * 1000L,
-                mMouseMods,
-                mMouseX - bounds.x(),
-                mMouseY - bounds.y(),
-                e.getClickCount(),
-                e.isPopupTrigger(),
-                e.getButton() );
-
-        source.processMouseEvent( e2 );
-
-        if( e2.isConsumed() ) {
-            e.consume();
-        }
-    }
-
-
-    private void resendMouseMotion( MouseEvent e, int newId, GComponent source ) {
-        Box bounds = source.absoluteBounds();
-
-        GMouseEvent e2 = new GMouseEvent( source,
-                newId < 0 ? e.getID() : newId,
-                e.getWhen() * 1000L,
-                mMouseMods,
-                mMouseX - bounds.x(),
-                mMouseY - bounds.y(),
-                e.getClickCount(),
-                e.isPopupTrigger(),
-                e.getButton() );
-
-        source.processMouseMotionEvent( e2 );
-
-        if( e2.isConsumed() ) {
-            e.consume();
-        }
-    }
-    
-    
-    private void resendMouseWheel( MouseWheelEvent e, int newId, GComponent source ) {
-        Box bounds = source.absoluteBounds();
-
-
-        GMouseWheelEvent e2 = new GMouseWheelEvent( source,
-                newId < 0 ? e.getID() : newId,
-                e.getWhen() * 1000L,
-                mMouseMods,
-                mMouseX - bounds.x(),
-                mMouseY - bounds.y(),
-                e.getClickCount(),
-                e.isPopupTrigger(),
-                e.getScrollType(),
-                e.getScrollAmount(),
-                e.getWheelRotation() );
-
-        source.processMouseWheelEvent( e2 );
-
-        if( e2.isConsumed() ) {
-            e.consume();
-        }
-    }
-    
-    
-    private void setMouseLocationComponent( MouseEvent e, GComponent comp ) {
-        GComponent source = mMouseLocation;
-
-        if( comp == source )
-            return;
-
-        if( source != null ) {
-            resendMouse( e, MouseEvent.MOUSE_EXITED, source );
-        }
-
-        mMouseLocation = comp;
-
-        if( comp != null ) {
-            resendMouse( e, MouseEvent.MOUSE_ENTERED, comp );
-        }
-    }
-    
-    
-    private void setMouseLocationComponent( GComponent comp ) {
-        GComponent source = mMouseLocation;
-
-        if( comp == source )
-            return;
-
-        if( source != null ) {
-            sendMouse( MouseEvent.MOUSE_EXITED, source );
-        }
-
-        mMouseLocation = comp;
-
-        if( comp != null ) {
-            sendMouse( MouseEvent.MOUSE_ENTERED, comp );
-        }
-    }
-    
-    
-    private boolean updateMouseLocation( MouseEvent e ) {
-        GComponent c = mMouseLocation;
-        GComponent root = mInputRoot;
-        Box bounds = root.absoluteBounds();
-
-        final int ex = mMouseX;
-        final int ey = mMouseY;
-
-        if( c == null ) {
-            c = root.mouseFocusableComponentAt( ex - bounds.x(), ey - bounds.y() );
-            if( c == null ) {
-                return false;
-            }
-
-            setMouseLocationComponent( e, c );
-            return true;
-
-        } else {
-            Box b = c.absoluteBounds();
-            int x = ex - b.x();
-            int y = ey - b.y();
-
-            GComponent d = c.mouseFocusableComponentAt( x, y );
-            if( c == d )
-                return true;
-
-            if( d == null )
-                d = root.mouseFocusableComponentAt( ex - bounds.x(), ey - bounds.y() );
-
-            setMouseLocationComponent( e, d );
-            return d != null;
-        }
-
-    }
-    
-    
-    private boolean initMouseLocation() {
-        GComponent root = mInputRoot;
-        final int ex = mMouseX;
-        final int ey = mMouseY;
-
-        if( root == null ) {
-            setMouseLocationComponent( null );
-            return false;
-        }
-
-        Box bounds = root.absoluteBounds();
-        GComponent target = root.mouseFocusableComponentAt( ex - bounds.x(), ey - bounds.y() );
-        if( target == null ) {
-            setMouseLocationComponent( null );
-            return false;
-        }
-
-        setMouseLocationComponent( target );
-        return true;
-    }
-
-
-    private void resendKey( KeyEvent e, int newId, GComponent source ) {
-        GKeyEvent e2 = new GKeyEvent( source,
-                newId < 0 ? e.getID() : newId,
-                e.getWhen() * 1000L,
-                e.getModifiers() | e.getModifiersEx(),
-                e.getKeyCode(),
-                e.getKeyChar(),
-                e.getKeyLocation() );
-
-        source.processKeyEvent( e2 );
-
-        if( e2.isConsumed() ) {
-            e.consume();
-        }
-    }
-
-
-    private boolean isChild( GComponent root, GComponent comp ) {
+    private static boolean isChild( GComponent root, GComponent comp ) {
         if( root == null )
             return false;
 
@@ -599,10 +256,9 @@ class EventProcessor {
 
         return false;
     }
-    
-    
-    private static class InputFrame {
 
+
+    private static class InputFrame {
         final GComponent mRoot;
         final GComponent mFocus;
 
@@ -610,6 +266,793 @@ class EventProcessor {
             mRoot = root;
             mFocus = focus;
         }
+    }
+
+
+    private static class ModifierState {
+
+        private static final int LOCATION_MASK = 0x1F;
+
+        private static final int KEYS_MASK = GInputEvent.SHIFT_DOWN_MASK |
+                                             GInputEvent.CTRL_DOWN_MASK |
+                                             GInputEvent.META_DOWN_MASK |
+                                             GInputEvent.ALT_DOWN_MASK;
+
+        private static final int BUTTONS_MASK = GInputEvent.BUTTON1_DOWN_MASK |
+                                                GInputEvent.BUTTON2_DOWN_MASK |
+                                                GInputEvent.BUTTON3_DOWN_MASK;
+
+        // The set of modal keys currently down, accounting for multiple
+        // locations (ie, left and right shift are separate bits).
+        // Each int here represents 32 possible locations of a given keyTyped of modal key.
+        private int mShifts = 0;
+        private int mCtrls  = 0;
+        private int mMetas  = 0;
+        private int mAlts   = 0;
+
+        // The set of modal keys currently down, regardless of location.
+        private int mKeys = 0;
+
+        // The set of mouse buttons currently down.
+        private int mButtons = 0;
+
+
+        public int pressButton( int i ) {
+            int mask;
+            switch( i ) {
+            case 0:
+                mask = GMouseEvent.BUTTON1_DOWN_MASK;
+                break;
+            case 1:
+                mask = GMouseEvent.BUTTON2_DOWN_MASK;
+                break;
+            case 2:
+                mask = GMouseEvent.BUTTON3_DOWN_MASK;
+                break;
+            default:
+                return mButtons | mKeys;
+            }
+
+            mButtons |= mask;
+            return mButtons | mKeys;
+        }
+
+
+        public int releaseButton( int i ) {
+            int mask;
+            switch( i ) {
+            case 0:
+                mask = GMouseEvent.BUTTON1_DOWN_MASK;
+                break;
+            case 1:
+                mask = GMouseEvent.BUTTON2_DOWN_MASK;
+                break;
+            case 2:
+                mask = GMouseEvent.BUTTON3_DOWN_MASK;
+                break;
+            default:
+                return mButtons | mKeys;
+            }
+
+            mButtons &= ~mask;
+            return mButtons | mKeys;
+        }
+
+
+        public int buttonModifiers() {
+            return mButtons;
+        }
+
+
+        public boolean anyButtonsDown() {
+            return mButtons != 0;
+        }
+
+
+        public int mouseEventModifiers() {
+            return mKeys | mButtons;
+        }
+
+
+        public int pressKey( int code, int location ) {
+            // Ignore key locations beyond range.
+            int loc = location & LOCATION_MASK;
+            if( loc != location && loc == 0 ) {
+                return mKeys;
+            }
+
+            switch( code ) {
+            case GKeyEvent.VK_SHIFT:
+                mShifts |= loc;
+                mKeys   |= GInputEvent.SHIFT_DOWN_MASK;
+                break;
+            case GKeyEvent.VK_CONTROL:
+                mCtrls  |= loc;
+                mKeys   |= GInputEvent.CTRL_DOWN_MASK;
+                break;
+            case GKeyEvent.VK_META:
+                mMetas  |= loc;
+                mKeys   |= GInputEvent.META_DOWN_MASK;
+                break;
+            case GKeyEvent.VK_ALT:
+                mAlts   |= loc;
+                mKeys   |= GInputEvent.ALT_DOWN_MASK;
+                break;
+            default:
+            }
+
+            return mKeys;
+        }
+
+
+        public int releaseKey( int code, int location ) {
+            // Ignore key locations beyond range.
+            int loc = location & LOCATION_MASK;
+            if( loc != location && loc == 0 ) {
+                return mKeys;
+            }
+
+            switch( code ) {
+            case GKeyEvent.VK_SHIFT:
+                mShifts &= ~loc;
+                if( mShifts == 0 ) {
+                    mKeys &= ~GInputEvent.SHIFT_DOWN_MASK;
+                }
+                break;
+
+            case GKeyEvent.VK_CONTROL:
+                mCtrls &= ~loc;
+                if( mCtrls == 0 ) {
+                    mKeys &= ~GInputEvent.CTRL_DOWN_MASK;
+                }
+                break;
+
+            case GKeyEvent.VK_META:
+                mMetas &= ~loc;
+                if( mMetas == 0 ) {
+                    mKeys &= ~GInputEvent.META_DOWN_MASK;
+                }
+                break;
+
+            case GKeyEvent.VK_ALT:
+                mAlts   |= loc;
+                if( mAlts == 0 ) {
+                    mKeys &= ~GInputEvent.ALT_DOWN_MASK;
+                }
+                break;
+            default:
+            }
+
+            return mKeys;
+        }
+
+
+        public int keyEventModifiers() {
+            return mKeys;
+        }
+
+
+        public void setKeyModifiers( int mods ) {
+            mKeys = mods & KEYS_MASK;
+            mShifts  = 0;
+            mCtrls   = 0;
+            mMetas   = 0;
+            mAlts    = 0;
+        }
+
+
+        public void setMouseModifiers( int mods ) {
+            mButtons = mods & BUTTONS_MASK;
+        }
+
+
+        public void setAll( int mods ) {
+            setKeyModifiers( mods );
+            setMouseModifiers( mods );
+        }
+
+    }
+
+
+    private static class FocusController {
+
+        private final GFocusTraversalPolicy mPolicy;
+        private Component  mAwtRoot;
+        private GComponent mRoot;
+        private GComponent mFocus;
+
+
+        public FocusController( GComponent root, Component optAwtOwner ) {
+            mPolicy  = new GChildOrderTraversalPolicy();
+            mRoot    = root;
+            mAwtRoot = optAwtOwner;
+        }
+
+
+
+        public GComponent focus() {
+            return mFocus;
+        }
+
+
+        public void requestFocus( GComponent source ) {
+            if( mAwtRoot != null && !mAwtRoot.hasFocus() ) {
+                mAwtRoot.requestFocus();
+            }
+
+            GComponent focus = mFocus;
+            if( focus == source ) {
+                return;
+            }
+
+            if( source == null || isChild( mRoot, source ) ) {
+                updateFocus( source, source, false );
+            }
+        }
+
+
+        public void transferFocusBackward( GComponent source ) {
+            GComponent focus = mFocus;
+            GComponent root  = mRoot;
+
+            if( focus != source ) {
+                return;
+            }
+
+            GComponent target = mPolicy.getComponentBefore( root, focus );
+            if( target != focus ) {
+                updateFocus( source, target, false );
+            }
+        }
+
+
+        public void transferFocusForward( GComponent source ) {
+            GComponent focus = mFocus;
+            GComponent root  = mRoot;
+
+            if( focus != source ) {
+                return;
+            }
+
+            GComponent target = mPolicy.getComponentAfter( root, focus );
+            if( target != focus ) {
+                updateFocus( source, target, false );
+            }
+        }
+
+
+        public void validate( GComponent optSource ) {
+            GComponent root  = mRoot;
+            GComponent focus = mFocus;
+
+            if( focus == null || !GToolkit.isKeyboardFocusable( focus ) || !isChild( root, focus ) ) {
+                GComponent target = mRoot;
+                target = mPolicy.getDefaultComponent( target );
+                updateFocus( optSource, target, false );
+            }
+        }
+
+
+        public void setRoot( GComponent root, GComponent initFocus ) {
+            mRoot = root;
+            validate( mRoot );
+        }
+
+
+        public void setAwtOwner( Component root ) {
+            mAwtRoot = root;
+        }
+
+
+
+        private void updateFocus( GComponent optSource, GComponent target, boolean temporary ) {
+            GComponent prev = mFocus;
+            if( prev == target ) {
+                return;
+            }
+
+            if( optSource == null ) {
+                optSource = mRoot;
+            }
+
+            mFocus = target;
+
+            if( prev != null ) {
+                prev.processFocusEvent( new GFocusEvent( optSource, GFocusEvent.FOCUS_LOST, temporary, target ) );
+            }
+
+            if( target != null ) {
+                target.processFocusEvent( new GFocusEvent( optSource, GFocusEvent.FOCUS_GAINED, temporary, target ) );
+            }
+        }
+
+
+        private boolean process( GComponent source, GKeyEvent event ) {
+            source.processKeyEvent( event );
+            return event.isConsumed();
+        }
+
+    }
+
+
+    private static class KeyController {
+
+        private final FocusController mFocusCont;
+        private final ModifierState   mMods;
+
+
+        public KeyController( FocusController focusCont, ModifierState mods ) {
+            mFocusCont = focusCont;
+            mMods = mods;
+        }
+
+
+        public boolean keyPressed( int keyCode, char keyChar, int keyLoc ) {
+            int mods = mMods.pressKey( keyCode, keyLoc );
+            GComponent focus = mFocusCont.focus();
+            if( focus == null ) {
+                return false;
+            }
+
+            long micros = System.currentTimeMillis() * 1000L;
+            int id = GKeyEvent.KEY_PRESSED;
+            GKeyEvent ev = new GKeyEvent( focus, id, micros, mods, keyCode, keyChar, keyLoc );
+            return process( focus, ev );
+        }
+
+
+        public boolean keyPressed( long micros, int mods, int keyCode, char keyChar, int keyLoc ) {
+            mMods.setKeyModifiers( mods );
+            GComponent focus = mFocusCont.focus();
+            if( focus == null ) {
+                return false;
+            }
+
+            int id = GKeyEvent.KEY_PRESSED;
+            GKeyEvent ev = new GKeyEvent( focus, id, micros, mods, keyCode, keyChar, keyLoc );
+            return process( focus, ev );
+        }
+
+
+        public boolean keyReleased( int keyCode, char keyChar, int keyLoc ) {
+            int mods = mMods.releaseKey( keyCode, keyLoc );
+            GComponent focus = mFocusCont.focus();
+            if( focus == null ) {
+                return false;
+            }
+
+            long micros = System.currentTimeMillis() * 1000L;
+            int id = GKeyEvent.KEY_RELEASED;
+            GKeyEvent ev = new GKeyEvent( focus, id, micros, mods, keyCode, keyChar, keyLoc );
+            return process( focus, ev );
+        }
+
+
+        public boolean keyReleased( long micros, int mods, int keyCode, char keyChar, int keyLoc ) {
+            mMods.setKeyModifiers( mods );
+            GComponent focus = mFocusCont.focus();
+            if( focus == null ) {
+                return false;
+            }
+
+            int id = GKeyEvent.KEY_RELEASED;
+            GKeyEvent ev = new GKeyEvent( focus, id, micros, mods, keyCode, keyChar, keyLoc );
+            return process( focus, ev );
+        }
+
+
+        public boolean keyTyped( int keyCode, char keyChar, int keyLoc ) {
+            int mods = mMods.keyEventModifiers();
+            GComponent focus = mFocusCont.focus();
+            if( focus == null ) {
+                return false;
+            }
+
+            long micros = System.currentTimeMillis() * 1000L;
+            int id = GKeyEvent.KEY_TYPED;
+            GKeyEvent ev = new GKeyEvent( focus, id, micros, mods, keyCode, keyChar, keyLoc );
+            return process( focus, ev );
+        }
+
+
+        public boolean keyTyped( long micros, int mods, int keyCode, char keyChar, int keyLoc ) {
+            mMods.setKeyModifiers( mods );
+            GComponent focus = mFocusCont.focus();
+            if( focus == null ) {
+                return false;
+            }
+
+            int id = GKeyEvent.KEY_TYPED;
+            GKeyEvent ev = new GKeyEvent( focus, id, micros, mods, keyCode, keyChar, keyLoc );
+            return process( focus, ev );
+        }
+
+
+        private boolean process( GComponent source, GKeyEvent event ) {
+            source.processKeyEvent( event );
+            return event.isConsumed();
+        }
+
+    }
+
+
+    private static class ClickCounter {
+        private long mMicros;
+        private int mCount  = 0;
+        private int mOffset = 0;
+
+        public int buttonDown( long t ) {
+            if( t > mMicros || mMicros + DOUBLE_CLICK_TIMEOUT < t ) {
+                clear();
+            }
+            mMicros = t;
+            return ++mCount - mOffset;
+        }
+
+        public int buttonUp( long t ) {
+            if( t > mMicros || mMicros + DOUBLE_CLICK_TIMEOUT < t ) {
+                clear();
+            }
+            return mCount - mOffset;
+        }
+
+        public int setCount( int count ) {
+            if( count < mOffset ) {
+                mOffset = 0;
+            }
+            return mCount - mOffset;
+        }
+
+        public int current() {
+            return mCount;
+        }
+
+        public void restartSequence() {
+            mOffset = mCount;
+        }
+
+        public void clear() {
+            mCount = 0;
+            mOffset = 0;
+        }
+
+    }
+
+
+    private static class MouseController {
+
+        private final ModifierState mMods;
+
+        private GComponent mRoot;
+        private GComponent mMouseLocation;
+        private GComponent mButtonFocus;
+        private GComponent mClickFocus;
+
+        private int mMouseX;
+        private int mMouseY;
+
+        private final ClickCounter mClicker = new ClickCounter();
+
+
+        public MouseController( ModifierState mods, GComponent root ) {
+            mRoot = root;
+            mMods = mods;
+        }
+
+
+        public boolean mousePressed( int button ) {
+            GComponent source = focusPress( button );
+            if( source == null ) {
+                return false;
+            }
+
+            mMods.pressButton( button );
+            long t = System.currentTimeMillis() * 1000L;
+            int clickCount = mClicker.buttonDown( t );
+            boolean trigger = button == GMouseEvent.BUTTON3;
+
+            return process( source, GMouseEvent.MOUSE_PRESSED, t, button, clickCount, trigger );
+        }
+
+
+        public boolean mousePressed( long micros, int mods, int button, int clickCount, boolean trigger ) {
+            mMods.setAll( mods );
+            clickCount = mClicker.setCount( clickCount );
+
+            GComponent source = focusPress( button );
+            if( source == null ) {
+                return false;
+            }
+
+            return process( source, GMouseEvent.MOUSE_PRESSED, micros, button, clickCount, trigger );
+        }
+
+
+        public boolean mouseReleased( int button ) {
+            GComponent source = focusRelease( button );
+            mMods.releaseButton( button );
+
+            if( source == null ) {
+                return false;
+            }
+
+            long micros = System.currentTimeMillis() * 1000L;
+            int clickCount = mClicker.buttonUp( micros );
+
+            return process( source, GMouseEvent.MOUSE_RELEASED, micros, button, clickCount, false );
+        }
+
+
+        public boolean mouseReleased( long micros, int mods, int button, int clickCount, boolean trigger ) {
+            mMods.setAll( mods );
+            clickCount = mClicker.setCount( clickCount );
+
+            GComponent source = focusRelease( button );
+            if( source == null ) {
+                return false;
+            }
+
+            return process( source, GMouseEvent.MOUSE_RELEASED, micros, button, clickCount, trigger );
+        }
+
+
+        public boolean mouseEntered( int x, int y ) {
+            return mouseMoved( x, y );
+        }
+
+
+        public boolean mouseEntered( long micros, int mods, int x, int y ) {
+            return mouseMoved( micros, mods, x, y );
+        }
+
+
+        public boolean mouseExited() {
+            GComponent prev = mMouseLocation;
+            mMouseLocation = null;
+            if( prev == null ) {
+                return false;
+            }
+
+            return process( prev, GMouseEvent.MOUSE_EXITED, System.currentTimeMillis() * 1000L, 0, 0, false );
+        }
+
+
+        public boolean mouseExited( long micros, int mods ) {
+            mMods.setAll( mods );
+
+            GComponent prev = mMouseLocation;
+            mMouseLocation = null;
+            if( prev == null ) {
+                return false;
+            }
+
+            return process( prev, GMouseEvent.MOUSE_EXITED, micros, 0, 0, false );
+        }
+
+
+        public boolean mouseMoved( int x, int y ) {
+            long micros = System.currentTimeMillis() * 1000L;
+            updatePosition( x, y, micros );
+
+            GComponent source = mButtonFocus;
+            if( source == null ) {
+                source = mMouseLocation;
+                if( source == null ) {
+                    return false;
+                }
+            }
+
+            int mods = mMods.mouseEventModifiers();
+            int id = (mods & ALL_BUTTONS_MASK) == 0 ? GMouseEvent.MOUSE_MOVED : GMouseEvent.MOUSE_DRAGGED;
+
+            return processMotion( source, id, micros );
+        }
+
+
+        public boolean mouseMoved( long micros, int mods, int x, int y ) {
+            mMods.setAll( mods );
+
+            updatePosition( x, y, micros );
+            GComponent source = mButtonFocus;
+            if( source == null ) {
+                source = mMouseLocation;
+                if( source == null ) {
+                    return false;
+                }
+            }
+
+            int id = (mods & ALL_BUTTONS_MASK) == 0 ? GMouseEvent.MOUSE_MOVED : GMouseEvent.MOUSE_DRAGGED;
+            return processMotion( source, id, micros );
+        }
+
+
+        public boolean mouseWheelMoved( int scrollType, int scrollAmount, int wheelRotation ) {
+            long micros = System.currentTimeMillis() * 1000L;
+            GComponent source = mMouseLocation;
+            if( source == null ) {
+                return false;
+            }
+            return processWheel( source, micros, scrollType, scrollAmount, wheelRotation );
+        }
+
+
+        public boolean mouseWheelMoved( long micros, int mods, int scrollType, int scrollAmount, int wheelRotation ) {
+            mMods.setAll( mods );
+            GComponent source = mMouseLocation;
+            if( source == null ) {
+                return false;
+            }
+            return processWheel( source, micros, scrollType, scrollAmount, wheelRotation );
+        }
+
+
+        /**
+         * Sets the input pane of the Controller. Only ancestors of the pane
+         * will receive events.
+         *
+         * @param root Input pane
+         */
+        public void setRoot( GComponent root ) {
+            mRoot = root;
+            validate();
+        }
+
+        /**
+         * Checks that components in focus are still valid. Should be called on property changes. Is called automatically
+         * by <code>setRoot()</code>.
+         */
+        public void validate() {
+            GComponent root = mRoot;
+            GComponent loc = mMouseLocation;
+            GComponent focus = mButtonFocus;
+
+            if( focus != null && (!GToolkit.isMouseFocusable( focus ) || !isChild( root, focus )) ) {
+                forceRelease();
+                mButtonFocus = null;
+                mClickFocus = null;
+            }
+
+            long micros = System.currentTimeMillis() * 1000L;
+            updatePosition( mMouseX, mMouseY, micros );
+        }
+
+        /**
+         * Forces the controller to mouseReleased all mouse buttons.
+         */
+        public void forceRelease() {
+            int mods = mMods.buttonModifiers();
+            if( (mods & GMouseEvent.BUTTON1_DOWN_MASK) != 0 ) {
+                mouseReleased( GMouseEvent.BUTTON1 );
+            }
+            if( (mods & GMouseEvent.BUTTON2_DOWN_MASK) != 0 ) {
+                mouseReleased( GMouseEvent.BUTTON2 );
+            }
+            if( (mods & GMouseEvent.BUTTON3_DOWN_MASK) != 0 ) {
+                mouseReleased( GMouseEvent.BUTTON3 );
+            }
+        }
+
+
+        private GComponent focusPress( int button ) {
+            GComponent ret = mButtonFocus;
+            if( ret == null ) {
+                ret = mButtonFocus = mClickFocus = mMouseLocation;
+            }
+            if( ret == null ) {
+                return null;
+            }
+            return ret;
+        }
+
+
+        private GComponent focusRelease( int button ) {
+            GComponent ret = mButtonFocus;
+            if( ret == null ) {
+                return mMouseLocation;
+            }
+            if( (mMods.buttonModifiers() & ~button) == 0 ) {
+                mButtonFocus = null;
+            }
+
+            return ret;
+        }
+
+
+        private void updatePosition( int x, int y, long micros ) {
+            mMouseX = x;
+            mMouseY = y;
+
+            GComponent prev = mMouseLocation;
+            GComponent focus = null;
+            if( prev != null ) {
+                Box bounds = prev.absoluteBounds();
+                int relx = x - bounds.x();
+                int rely = y - bounds.y();
+                focus = prev.mouseFocusableComponentAt( relx, rely );
+            } else {
+                GComponent comp = mRoot;
+                Box bounds = comp.absoluteBounds();
+                int relx = x - bounds.x();
+                int rely = y - bounds.y();
+                focus = comp.mouseFocusableComponentAt( relx, rely );
+            }
+
+            if( focus == prev ) {
+                return;
+            }
+
+            mClicker.restartSequence();
+            mMouseLocation = focus;
+            if( prev != null ) {
+                process( prev, GMouseEvent.MOUSE_EXITED, micros, 0, 0, false );
+            }
+            if( focus != null ) {
+                process( focus, GMouseEvent.MOUSE_ENTERED, micros, 0, 0, false );
+            }
+        }
+
+
+        private boolean process( GComponent source,
+                                 int id,
+                                 long micros,
+                                 int button,
+                                 int clickCount,
+                                 boolean trigger )
+        {
+            Box box = source.absoluteBounds();
+            GMouseEvent e = new GMouseEvent( source,
+                                             id,
+                                             micros,
+                                             mMods.mouseEventModifiers(),
+                                             mMouseX - box.x(),
+                                             mMouseY - box.y(),
+                                             clickCount,
+                                             trigger,
+                                             button );
+
+            source.processMouseEvent( e );
+            return e.isConsumed();
+        }
+
+
+        private boolean processMotion( GComponent source, int id, long micros ) {
+            Box box = source.absoluteBounds();
+            GMouseEvent e = new GMouseEvent( source,
+                                             id,
+                                             micros,
+                                             mMods.mouseEventModifiers(),
+                                             mMouseX - box.x(),
+                                             mMouseY - box.y(),
+                                             mClicker.current(),
+                                             false,
+                                             0 );
+            source.processMouseMotionEvent( e );
+            return e.isConsumed();
+        }
+
+
+        private boolean processWheel( GComponent source,
+                                      long micros,
+                                      int scrollType,
+                                      int scrollAmount,
+                                      int wheelRotation )
+        {
+            Box box = source.absoluteBounds();
+            GMouseWheelEvent e = new GMouseWheelEvent( source,
+                                                       GMouseEvent.MOUSE_WHEEL,
+                                                       micros,
+                                                       mMods.mouseEventModifiers(),
+                                                       mMouseX - box.x(),
+                                                       mMouseY - box.y(),
+                                                       mClicker.current(),
+                                                       false,
+                                                       scrollType,
+                                                       scrollAmount,
+                                                       wheelRotation );
+            source.processMouseWheelEvent( e );
+            return e.isConsumed();
+        }
+
 
     }
 

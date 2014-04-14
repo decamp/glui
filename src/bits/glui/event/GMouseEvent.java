@@ -24,14 +24,14 @@ public class GMouseEvent extends GInputEvent {
     public static final int MOUSE_RELEASED = MouseEvent.MOUSE_RELEASED;
     public static final int MOUSE_WHEEL    = MouseEvent.MOUSE_WHEEL;
     public static final int NOBUTTON       = MouseEvent.NOBUTTON;
-    
-    private int mX;
-    private int mY;
-    private final int mClickCount;
+
+    private       int     mX;
+    private       int     mY;
+    private final int     mClickCount;
     private final boolean mPopupTrigger;
-    private final int mButton;
-    
-    
+    private final int     mButton;
+
+
     public GMouseEvent( GComponent source,
                         int id,
                         long timestampMicros,
@@ -40,54 +40,50 @@ public class GMouseEvent extends GInputEvent {
                         int y,
                         int clickCount,
                         boolean popupTrigger,
-                        int button)
+                        int button )
     {
-        super(source, id, timestampMicros, modifiers);
+        super( source, id, timestampMicros, modifiers );
         mX = x;
         mY = y;
         mClickCount = clickCount;
         mPopupTrigger = popupTrigger;
         mButton = button;
     }
-    
-    
-    
+
+
     public int getButton() {
         return mButton;
     }
-    
-    
+
+
     public int getClickCount() {
         return mClickCount;
     }
-    
-    
+
+
     public int getX() {
         return mX;
     }
-    
-    
+
+
     public int getY() {
         return mY;
     }
-    
-    
+
+
     public boolean isPopupTrigger() {
         return mPopupTrigger;
     }
-    
-    
-    public void translatePoint(int x, int y) {
+
+
+    public void translatePoint( int x, int y ) {
         mX += x;
         mY += y;
     }
 
-    
-    
-    
-    public static String getMouseModifiersText(int modifiers) {
-        return MouseEvent.getMouseModifiersText(modifiers);
+
+    public static String getMouseModifiersText( int modifiers ) {
+        return MouseEvent.getMouseModifiersText( modifiers );
     }
-    
-    
+
 }

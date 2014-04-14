@@ -340,8 +340,8 @@ public class Box implements Serializable {
     /**
      * Moves the Box.
      * 
-     * @param dx Amount to move the Box horizantally.
-     * @param dy Amount to move the Box vertically.
+     * @param dx Amount to mouseMoved the Box horizantally.
+     * @param dy Amount to mouseMoved the Box vertically.
      * @returns a new Box.
      */
     public Box translate(int dx, int dy) {
