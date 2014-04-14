@@ -37,7 +37,7 @@ public class GCheckBox extends GButton implements GSelectable {
 
 
     @Override
-    public void paint( GGraphics g ) {
+    public void paintComponent( GGraphics g ) {
         final GL gl = g.gl();
 
         final int w = width();

@@ -17,16 +17,16 @@ class EventQueue implements GDispatcher {
     private Item mItemPool    = null;
     private int mItemPoolSize = 0;
     private boolean mIgnoreRepaints = false;
-    
+
 
     EventQueue( GComponent root ) {
         mRoot = root;
-        
         for( int i = 0; i < mQueues.length; i++ ) {
             mQueues[i] = new Queue();
         }
     }
-    
+
+
     
     public boolean ignoreRepaints() {
         return mIgnoreRepaints;
@@ -39,15 +39,16 @@ class EventQueue implements GDispatcher {
     
     
     public synchronized void firePaint( GComponent source ) {
-        if( mIgnoreRepaints )
+        if( mIgnoreRepaints ) {
             return;
+        }
         
         Queue q = mQueues[PRIORITY_REPAINT];
-        
         // Currently, all paint requests repaint entire screen.
         // So there's no point in multiple repaint requests.
-        if( q.mHead != null ) 
+        if( q.mHead != null ) {
             return;
+        }
         
         Item item = getItem();
         item.mSource = source;
@@ -59,12 +60,10 @@ class EventQueue implements GDispatcher {
     public synchronized void fireLayout( GComponent source ) {
         Queue q = mQueues[PRIORITY_LAYOUT];
         Item item = q.mHead;
-        
         if( item != null ) {
             if( item.mSource != source ) {
                 item.mSource = mRoot;
             }
-            
             return;
         }
         
@@ -76,63 +75,63 @@ class EventQueue implements GDispatcher {
 
 
     public synchronized void fireRequestFocus( GComponent source ) {
-        Item item = getItem();
-        item.mSource    = source;
-        item.mCall = PROCESS_REQUEST_FOCUS;
+        Item item    = getItem();
+        item.mSource = source;
+        item.mCall   = PROCESS_REQUEST_FOCUS;
         mQueues[PRIORITY_OTHER].offer( item );
     }
 
 
     public synchronized void fireTransferFocusBackward( GComponent source ) {
-        Item item = getItem();
-        item.mSource    = source;
-        item.mCall = PROCESS_TRANSFER_FOCUS_FORWARD;
+        Item item    = getItem();
+        item.mSource = source;
+        item.mCall   = PROCESS_TRANSFER_FOCUS_FORWARD;
         mQueues[PRIORITY_OTHER].offer( item );
     }
 
 
     public synchronized void fireTransferFocusForward( GComponent source ) {
-        Item item = getItem();
-        item.mSource    = source;
-        item.mCall = PROCESS_TRANSFER_FOCUS_BACKWARD;
+        Item item    = getItem();
+        item.mSource = source;
+        item.mCall   = PROCESS_TRANSFER_FOCUS_BACKWARD;
         mQueues[PRIORITY_OTHER].offer( item );
     }
 
 
     public synchronized void firePushInputRoot( GComponent source ) {
-        Item item = getItem();
-        item.mSource    = source;
-        item.mCall = PROCESS_PUSH_INPUT_ROOT;
+        Item item    = getItem();
+        item.mSource = source;
+        item.mCall   = PROCESS_PUSH_INPUT_ROOT;
         mQueues[PRIORITY_OTHER].offer( item );
     }
 
 
     public synchronized void firePopInputRoot( GComponent source ) {
-        Item item = getItem();
-        item.mSource    = source;
-        item.mCall = PROCESS_POP_INPUT_ROOT;
+        Item item    = getItem();
+        item.mSource = source;
+        item.mCall   = PROCESS_POP_INPUT_ROOT;
         mQueues[PRIORITY_OTHER].offer( item );
     }
 
 
     public synchronized void fireComponentEvent( GComponentEvent event ) {
-        Item item = getItem();
+        Item item     = getItem();
         item.mObject1 = event;
-        item.mCall = PROCESS_COMPONENT_EVENT;
+        item.mCall    = PROCESS_COMPONENT_EVENT;
         mQueues[PRIORITY_OTHER].offer( item );
     }
 
 
     public synchronized void fireAncestorEvent( GAncestorEvent event ) {
-        Item item = getItem();
+        Item item     = getItem();
         item.mObject1 = event;
-        item.mCall = PROCESS_ANCESTOR_EVENT;
+        item.mCall    = PROCESS_ANCESTOR_EVENT;
         mQueues[PRIORITY_OTHER].offer( item );
     }
 
 
     public synchronized void firePropertyChange( GComponent source, String prop, Object oldValue, Object newValue ) {
-        Item item = getItem();
+        Item item     = getItem();
         item.mSource  = source;
         item.mString  = prop;
         item.mObject1 = oldValue;
@@ -143,7 +142,7 @@ class EventQueue implements GDispatcher {
 
 
     public synchronized void fireRunnable( Runnable r ) {
-        Item item = getItem();
+        Item item     = getItem();
         item.mObject1 = r;
         item.mCall    = PROCESS_RUN;
         mQueues[PRIORITY_OTHER].offer( item );
@@ -161,7 +160,6 @@ class EventQueue implements GDispatcher {
                     offerItem ( item );
                     item = null;
                 }
-                
                 for( int n = PRIORITY_MAX - 1; item == null && n >= 0; n-- ) {
                     item = mQueues[n].remove();
                 }
@@ -170,7 +168,6 @@ class EventQueue implements GDispatcher {
             if( item == null ) {
                 return ret;
             }
-            
             ret = true;
             
             try {
@@ -210,16 +207,14 @@ class EventQueue implements GDispatcher {
     
     
     private static final class Item {
-        
         Item mNext;
-        
-        Call mCall;
+
+        Call       mCall;
         GComponent mSource;
-        String mString;
-        Object mObject1;
-        Object mObject2;
-        
-        
+        String     mString;
+        Object     mObject1;
+        Object     mObject2;
+
         public void clear() {
             mNext    = null;
             mSource  = null;
@@ -227,7 +222,6 @@ class EventQueue implements GDispatcher {
             mObject1 = null;
             mObject2 = null;
         }
-        
     }
     
     

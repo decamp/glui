@@ -9,7 +9,6 @@ import javax.swing.Action;
 import bits.glui.event.*;
 
 
-
 /**
  * @author decamp
  */
@@ -22,7 +21,8 @@ public class GButton extends GLabel {
         super( text );
         addMouseListener( new MouseListenerImpl() );
     }
-    
+
+
     public GButton( Action action ) {
         super( "" );
         addMouseListener( new MouseListenerImpl() );
@@ -42,7 +42,8 @@ public class GButton extends GLabel {
     public void addActionListener( ActionListener al ) {
         mCaster = GluiMulticaster.add( mCaster, al );
     }
-    
+
+
     public void removeActionListener( ActionListener al ) {
         mCaster = GluiMulticaster.remove( mCaster, al );
     }

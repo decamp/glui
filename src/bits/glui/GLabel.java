@@ -10,9 +10,8 @@ import static javax.media.opengl.GL.*;
 /**
  * @author Philip DeCamp
  */
-public class GLabel extends GPanel implements GPaintListener {
+public class GLabel extends GPanel {
 
-   
     private String mText;
     private float mHorSrc   = 0.5f;
     private float mHorDst   = 0.5f;
@@ -26,7 +25,6 @@ public class GLabel extends GPanel implements GPaintListener {
     
     public GLabel( String text ) {
         mText = text;
-        addPaintListener( this );
     }
 
     
@@ -67,7 +65,8 @@ public class GLabel extends GPanel implements GPaintListener {
     }
         
 
-    public void paint( GGraphics g ) {
+    @Override
+    public void paintComponent( GGraphics g ) {
         GL gl = g.gl();
         int w = width();
         int h = height();
@@ -108,6 +107,5 @@ public class GLabel extends GPanel implements GPaintListener {
         
         gl.glPopMatrix();
     }
-    
-    
+
 }

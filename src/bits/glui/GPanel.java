@@ -207,12 +207,8 @@ public class GPanel implements GComponent {
         if( visible == mVisible ) {
             return;
         }
-        
+
         mVisible = visible;
-        if( !updateDisplayed() ) {
-            return;
-        }
-        
         if( visible ) {
             treeProcessParentShown();
         } else {
@@ -514,7 +510,7 @@ public class GPanel implements GComponent {
     
     @Override
     public synchronized void applyLayout() {
-        if( mNeedsLayout || mLayout == null ) {
+        if( mNeedsLayout || mLayout == null && mChildren.isEmpty() ) {
             return;
         }
         
