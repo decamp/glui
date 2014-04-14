@@ -187,18 +187,18 @@ class EventProcessor implements GHumanInputController {
     }
 
     @Override
-    public boolean mousePressed( long micros, int mods, int button, int clickCount, boolean trigger ) {
-        return mMouseCont.mousePressed( micros, mods, button, clickCount, trigger );
+    public boolean mousePressed( long micros, int mods, int button, boolean trigger ) {
+        return mMouseCont.mousePressed( micros, mods, button, trigger );
     }
 
     @Override
-    public boolean mouseReleased( int button ) {
-        return mMouseCont.mouseReleased( button );
+    public boolean mouseReleased( int button, boolean genClick ) {
+        return mMouseCont.mouseReleased( button, genClick );
     }
 
     @Override
-    public boolean mouseReleased( long micros, int mods, int button, int clickCount, boolean trigger ) {
-        return mMouseCont.mouseReleased( micros, mods, button, clickCount, trigger );
+    public boolean mouseReleased( long micros, int mods, int button, boolean trigger, boolean genClick ) {
+        return mMouseCont.mouseReleased( micros, mods, button, trigger, genClick );
     }
 
     @Override
@@ -676,13 +676,16 @@ class EventProcessor implements GHumanInputController {
     }
 
 
+    //TODO: I don't think anyone is using the setCount or restartSequence cruft,
+    // which was originally meant to deal with AWT issues that didn't actually
+    // exist.
     private static class ClickCounter {
         private long mMicros;
         private int mCount  = 0;
         private int mOffset = 0;
 
         public int buttonDown( long t ) {
-            if( t > mMicros || mMicros + DOUBLE_CLICK_TIMEOUT < t ) {
+            if( t < mMicros || t > mMicros + DOUBLE_CLICK_TIMEOUT ) {
                 clear();
             }
             mMicros = t;
@@ -690,7 +693,7 @@ class EventProcessor implements GHumanInputController {
         }
 
         public int buttonUp( long t ) {
-            if( t > mMicros || mMicros + DOUBLE_CLICK_TIMEOUT < t ) {
+            if( t < mMicros || t > mMicros + DOUBLE_CLICK_TIMEOUT ) {
                 clear();
             }
             return mCount - mOffset;
@@ -726,7 +729,10 @@ class EventProcessor implements GHumanInputController {
         private GComponent mRoot;
         private GComponent mMouseLocation;
         private GComponent mButtonFocus;
-        private GComponent mClickFocus;
+//        private GComponent mClickFocus;
+
+        private int mClickFocusX = Integer.MIN_VALUE;
+        private int mClickFocusY = Integer.MIN_VALUE;
 
         private int mMouseX;
         private int mMouseY;
@@ -755,9 +761,12 @@ class EventProcessor implements GHumanInputController {
         }
 
 
-        public boolean mousePressed( long micros, int mods, int button, int clickCount, boolean trigger ) {
+        public boolean mousePressed( long micros, int mods, int button, boolean trigger ) {
             mMods.setAll( mods );
-            clickCount = mClicker.setCount( clickCount );
+
+            int clickCount = mClicker.buttonDown( micros );
+            mClickFocusX = mMouseX;
+            mClickFocusY = mMouseY;
 
             GComponent source = focusPress( button );
             if( source == null ) {
@@ -768,7 +777,7 @@ class EventProcessor implements GHumanInputController {
         }
 
 
-        public boolean mouseReleased( int button ) {
+        public boolean mouseReleased( int button, boolean genClick ) {
             GComponent source = focusRelease( button );
             mMods.releaseButton( button );
 
@@ -779,20 +788,30 @@ class EventProcessor implements GHumanInputController {
             long micros = System.currentTimeMillis() * 1000L;
             int clickCount = mClicker.buttonUp( micros );
 
-            return process( source, GMouseEvent.MOUSE_RELEASED, micros, button, clickCount, false );
+            boolean ret = process( source, GMouseEvent.MOUSE_RELEASED, micros, button, clickCount, false );
+            if( genClick ) {
+                process( source, GMouseEvent.MOUSE_CLICKED, micros, button, clickCount, false );
+            }
+
+            return ret;
         }
 
 
-        public boolean mouseReleased( long micros, int mods, int button, int clickCount, boolean trigger ) {
+        public boolean mouseReleased( long micros, int mods, int button, boolean trigger, boolean genClick ) {
             mMods.setAll( mods );
-            clickCount = mClicker.setCount( clickCount );
+            int clickCount = mClicker.buttonUp( micros );
 
             GComponent source = focusRelease( button );
             if( source == null ) {
                 return false;
             }
 
-            return process( source, GMouseEvent.MOUSE_RELEASED, micros, button, clickCount, trigger );
+            boolean ret = process( source, GMouseEvent.MOUSE_RELEASED, micros, button, clickCount, trigger );
+            if( genClick && mMouseX == mClickFocusX && mMouseY == mClickFocusY ) {
+                process( source, GMouseEvent.MOUSE_CLICKED, micros, button, clickCount, trigger );
+            }
+
+            return ret;
         }
 
 
@@ -909,7 +928,8 @@ class EventProcessor implements GHumanInputController {
             if( focus != null && (!GToolkit.isMouseFocusable( focus ) || !isChild( root, focus )) ) {
                 forceRelease();
                 mButtonFocus = null;
-                mClickFocus = null;
+                mClickFocusX = Integer.MIN_VALUE;
+                mClickFocusY = Integer.MIN_VALUE;
             }
 
             long micros = System.currentTimeMillis() * 1000L;
@@ -922,13 +942,13 @@ class EventProcessor implements GHumanInputController {
         public void forceRelease() {
             int mods = mMods.buttonModifiers();
             if( (mods & GMouseEvent.BUTTON1_DOWN_MASK) != 0 ) {
-                mouseReleased( GMouseEvent.BUTTON1 );
+                mouseReleased( GMouseEvent.BUTTON1, false );
             }
             if( (mods & GMouseEvent.BUTTON2_DOWN_MASK) != 0 ) {
-                mouseReleased( GMouseEvent.BUTTON2 );
+                mouseReleased( GMouseEvent.BUTTON2, false );
             }
             if( (mods & GMouseEvent.BUTTON3_DOWN_MASK) != 0 ) {
-                mouseReleased( GMouseEvent.BUTTON3 );
+                mouseReleased( GMouseEvent.BUTTON3, false );
             }
         }
 
@@ -936,7 +956,7 @@ class EventProcessor implements GHumanInputController {
         private GComponent focusPress( int button ) {
             GComponent ret = mButtonFocus;
             if( ret == null ) {
-                ret = mButtonFocus = mClickFocus = mMouseLocation;
+                ret = mButtonFocus = mMouseLocation;
             }
             if( ret == null ) {
                 return null;
@@ -959,10 +979,16 @@ class EventProcessor implements GHumanInputController {
 
 
         private void updatePosition( int x, int y, long micros ) {
-            mMouseX = x;
-            mMouseY = y;
+            if( x != mMouseX || y != mMouseY ) {
+                mMouseX = x;
+                mMouseY = y;
+                mClicker.clear();
+                mClickFocusX = Integer.MIN_VALUE;
+                mClickFocusY = Integer.MIN_VALUE;
+            }
 
-            GComponent prev = mMouseLocation;
+
+            GComponent prev  = mMouseLocation;
             GComponent focus = null;
             if( prev != null ) {
                 Box bounds = prev.absoluteBounds();
@@ -981,7 +1007,6 @@ class EventProcessor implements GHumanInputController {
                 return;
             }
 
-            mClicker.restartSequence();
             mMouseLocation = focus;
             if( prev != null ) {
                 process( prev, GMouseEvent.MOUSE_EXITED, micros, 0, 0, false );

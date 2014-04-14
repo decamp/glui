@@ -105,12 +105,12 @@ public class TestAwtEvents {
 
         @Override
         public void mouseDragged( MouseEvent event ) {
-            out.println( "    dragged:  " + format( event ) );
+//            out.println( "    dragged:  " + format( event ) );
         }
 
         @Override
         public void mouseMoved( MouseEvent event ) {
-            out.println( "    moved:  " + format( event ) );
+//            out.println( "    moved:  " + format( event ) );
         }
 
         @Override

@@ -16,9 +16,10 @@ public interface GHumanInputController {
     public boolean keyTyped( long micros, int mods, int keyCode, char keyChar, int keyLoc );
 
     public boolean mousePressed( int button );
-    public boolean mousePressed( long micros, int mods, int button, int clickCount, boolean trigger );
-    public boolean mouseReleased( int button );
-    public boolean mouseReleased( long micros, int mods, int button, int clickCount, boolean trigger );
+    public boolean mousePressed( long micros, int mods, int button, boolean triggerPopup );
+    public boolean mouseReleased( int button, boolean genClick );
+    public boolean mouseReleased( long micros, int mods, int button, boolean triggerPopup, boolean genClick );
+
     public boolean mouseEntered( int x, int y );
     public boolean mouseEntered( long micros, int mods, int x, int y );
     public boolean mouseExited();

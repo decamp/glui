@@ -161,13 +161,13 @@ public class TestFocus {
         }
 
 
-        public void mouseClicked( GMouseEvent e ) {}
+        public void mouseClicked( GMouseEvent e ) {
+            System.out.println( mIndex + " clicked : " + e.getClickCount() );
+        }
 
-        
         @Override
         public void mouseMoved( GMouseEvent e ) {}
-        
-        
+
         @Override
         public void mouseDragged( GMouseEvent e ) {
             System.out.println( this + "\t" + e.getX() + ", " + e.getY() );

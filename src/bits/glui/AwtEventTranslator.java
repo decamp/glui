@@ -29,7 +29,6 @@ class AwtEventTranslator implements MouseListener, MouseMotionListener, MouseWhe
         if( mCont.mousePressed( e.getWhen() * 1000L,
                                 modsFor( e ),
                                 e.getButton(),
-                                e.getClickCount(),
                                 e.isPopupTrigger() ) )
         {
             e.consume();
@@ -39,19 +38,18 @@ class AwtEventTranslator implements MouseListener, MouseMotionListener, MouseWhe
 
     public void mouseReleased( MouseEvent e ) {
         if( mCont.mouseReleased( e.getWhen() * 1000L,
-                                      modsFor( e ),
-                                      e.getButton(),
-                                      e.getClickCount(),
-                                      e.isPopupTrigger() ) )
+                                 modsFor( e ),
+                                 e.getButton(),
+                                 e.isPopupTrigger(),
+                                 true ) )
+
         {
             e.consume();
         }
     }
 
 
-    public void mouseClicked( MouseEvent e ) {
-
-    }
+    public void mouseClicked( MouseEvent e ) {}
 
 
     public void mouseEntered( MouseEvent e ) {
