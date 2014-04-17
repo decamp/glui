@@ -128,9 +128,9 @@ public class FontUtil {
      * @param off       Offset into array of chars.
      * @param len       Number of chars in input.
      * @param maxWidth  Maximum width for layout.
-     * @param outWidth  <code>outWidth[0]</code> will hold the exact width
-     *                  of the fitted characters on return. May be <code>null</code>
-     *                  May be <code>null</code>.
+     * @param outWidth  {@code outWidth[0]} will hold the exact width
+     *                  of the fitted characters on return. May be {@code null}
+     *                  May be {@code null}.
      *                  
      * @return The number of characters that fit within the specified width.
      */
@@ -207,9 +207,9 @@ public class FontUtil {
      * @param off       Offset into seq where input starts.
      * @param len       Number of chars in input.
      * @param maxWidth  Maximum width for layout.
-     * @param outWidth  <code>outWidth[0]</code> will hold the exact width
+     * @param outWidth  {@code outWidth[0]} will hold the exact width
      *                  the exact width of the fitted characters on return.
-     *                  May be <code>null</code>.
+     *                  May be {@code null}.
      *                  
      * @return The number of characters that fit within the specified width.
      */
@@ -290,8 +290,8 @@ public class FontUtil {
      * @param metrics
      * @param seq
      * @param out         Holds the right position of each character in the input
-     *                    sequence. <code>out.length >= seq.length()</code>
-     * @param outOffset   Offset into <code>out</code> where output will be written.
+     *                    sequence. {@code out.length >= seq.length()}
+     * @param outOffset   Offset into {@code out} where output will be written.
      */
     public static void charPositions( FontMetrics metrics, CharSequence seq, float[] out, int outOffset ) {
         charPositions( metrics, seq, 0, seq.length(), out, outOffset );
@@ -310,8 +310,8 @@ public class FontUtil {
      * @param off         Offset into sequence where input begins.
      * @param len         Length of input to use.
      * @param out         Holds the right position of each character in the input
-     *                    sequence. <code>out.length >= seq.length()</code>
-     * @param outOffset   Offset into <code>out</code> where output will be written.
+     *                    sequence. {@code out.length >= seq.length()}
+     * @param outOffset   Offset into {@code out} where output will be written.
      */
     public static void charPositions( FontMetrics metrics,
                                       CharSequence seq,
@@ -361,8 +361,8 @@ public class FontUtil {
      * @param off         Offset into chars where input begins.
      * @param len         Length of input to use.
      * @param out         Holds the right position of each character in the input
-     *                    sequence. <code>out.length >= seq.length()</code>
-     * @param outOffset   Offset into <code>out</code> where output will be written.
+     *                    sequence. {@code out.length >= seq.length()}
+     * @param outOffset   Offset into {@code out} where output will be written.
      */
     public static void charPositions( FontMetrics metrics, char[] chars, int off, int len, float[] out, int outOffset ) {
         int width = 0;

@@ -17,7 +17,7 @@ interface GlyphMap {
     
     /**
      * After constructing the table through a series of
-     * <code>put()</code> commands, <code>optimize()</code>
+     * {@code put()} commands, {@code optimize()}
      * must be called to prepare the table for use.
      */
     public void optimize();

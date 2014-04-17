@@ -194,12 +194,12 @@ public class Box implements Serializable {
     /****** TRANSFORMATIONS ******/
 
     /**
-     * Creates a new Box that has the size of <code>this</code> Box, but is
+     * Creates a new Box that has the size of {@code this} Box, but is
      * moved completely inside the argument Box. If the Box is too large
      * to fit inside, it is centered inside the argument Box, but its size is
      * not changed.
      * 
-     * @param box Box in which to fit <code>this</code> Box.
+     * @param box Box in which to fit {@code this} Box.
      * @returns a new Box.
      */
     public Box clamp(Box box) {
@@ -255,7 +255,7 @@ public class Box implements Serializable {
     }
 
     /**
-     * @returns the intersection between <code>this</code> Box and the
+     * @returns the intersection between {@code this} Box and the
      *          Parameter Box. If the two Boxs do not overlap, a Box with 0
      *          size is returned.
      */
@@ -317,7 +317,7 @@ public class Box implements Serializable {
      * Computes the smallest box which contains completely this Box and 
      * the specified Box.
      * 
-     * @returns Box representing union of <tt>this</tt> and <tt>box</tt>.
+     * @returns Box representing union of {@code this} and {@code box}.
      */
     public Box union(Box box) {
         return new Box( Math.min(mMinX, box.mMinX), 

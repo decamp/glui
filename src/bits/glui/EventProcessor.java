@@ -918,7 +918,7 @@ class EventProcessor implements GHumanInputController {
 
         /**
          * Checks that components in focus are still valid. Should be called on property changes. Is called automatically
-         * by <code>setRoot()</code>.
+         * by {@code setRoot()}.
          */
         public void validate() {
             GComponent root = mRoot;
