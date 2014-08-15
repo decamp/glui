@@ -531,8 +531,8 @@ public class GPanel implements GComponent {
         if( mNeedsPaint || mDispatcher == null ) {
             return;
         }
-
         mNeedsPaint = true;
+        mDispatcher.firePaint( this );
     }
     
     @Override

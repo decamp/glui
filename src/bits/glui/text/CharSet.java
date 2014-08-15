@@ -6,7 +6,7 @@ package bits.glui.text;
  * 
  * @author decamp
  */
-public class CharSet {
+public class CharSet implements CharSequence {
     
     public static final CharSet DEFAULT = new CharSet( "abcdefghijklmnopqrstuvwxyz" +
                                                        "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
@@ -56,12 +56,7 @@ public class CharSet {
     }
     
     
-    
-    public CharSequence chars() {
-        return mChars;
-    }
-    
-    
+
     public char min() {
         return mMin;
     }
@@ -70,13 +65,33 @@ public class CharSet {
     public char max() {
         return mMax;
     }
-    
+
+
     /**
      * @return index of character to use as substitute for unrecognized characters.
      */
     public int unknown() {
         return mUnknown;
     }
-    
+
+
+    public char charAt( int n ) {
+        return mChars.charAt( n );
+    }
+
+
+    public int length() {
+        return mChars.length();
+    }
+
+
+    public CharSequence subSequence( int start, int end ) {
+        return mChars.subSequence( start, end );
+    }
+
+
+    public CharSequence chars() {
+        return mChars;
+    }
 
 }

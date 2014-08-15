@@ -1,8 +1,7 @@
 package bits.glui.text;
 
 class GlyphMaps {
-    
-    
+
     static GlyphMap newGlyphMap() {
         return new FlatGlyphMap( CharSet.DEFAULT );
     }

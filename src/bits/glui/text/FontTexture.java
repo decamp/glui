@@ -35,8 +35,7 @@ import javax.media.opengl.glu.GLU;
  */
 public class FontTexture {
 
-    public static final float DEFAULT_BOX_MARGIN    = 5.0f;
-    private static final GLU  GLU_INST              = new GLU();
+    private static final GLU GLU_INST = new GLU();
     
     
     private final Font              mFont;
@@ -88,8 +87,6 @@ public class FontTexture {
 
     /**
      * You MUST call this method before using texture for rendering.
-     * 
-     * @param gl
      */
     public void push( GL gl ) {
         gl.glGetIntegerv( GL_BLEND, mBlendRevert, 0 );
@@ -104,8 +101,6 @@ public class FontTexture {
 
     /**
      * You MUST call this method after you are done using texture for rendering.
-     * 
-     * @param gl
      */
     public void pop( GL gl ) {
         if( mTexture == null )
@@ -121,8 +116,6 @@ public class FontTexture {
     /**
      * This method will be called automatically, but you can call it 
      * manually for initialization scheduling purposes.
-     * 
-     * @param gl
      */
     public void load( GL gl ) {
         mTexture.init( gl );
@@ -130,8 +123,6 @@ public class FontTexture {
     
     /**
      * Call to unload resources. After unloaded, the texture CANNOT be used again.
-     * 
-     * @param gl
      */
     public void unload( GL gl ) {
         mTexture.dispose( gl );
@@ -199,11 +190,6 @@ public class FontTexture {
      * FontUtil.charsWidth(), and accounts for any glyphs that the 
      * FontTexture may have failed to rasterize. It also handles
      * newlines and returns max length of any line.
-     * 
-     * @param chars
-     * @param off
-     * @param len
-     * @return
      */
     public float getCharsWidth( char[] chars, int off, int len ) {
         float maxWidth = 0f;
@@ -236,9 +222,6 @@ public class FontTexture {
      * precomputes kerning tables for each glyph, this is probably
      * faster than using FontUtil.charsWidth(), and accounts for any
      * glyphs that the FontTexture may have failed to rasterize.
-     * 
-     * @param chars
-     * @return
      */
     public float getCharsWidth( CharSequence chars ) {
         final int len  = chars.length();
@@ -275,11 +258,6 @@ public class FontTexture {
      * <p>
      * You MUST push the FontTexture before calling this method.
      * The characters will be rendered using the current GL color.
-     * 
-     * @param gl
-     * @param chars
-     * @param off
-     * @param len
      */
     public void renderChars( GL gl, char[] chars, int off, int len ) {
         renderChars( gl, 0.0f, 0.0f, 0.0f, chars, off, len );
@@ -291,11 +269,6 @@ public class FontTexture {
      * <p> 
      * You MUST push the FontTexture before calling this method.
      * The characters will be rendered using the current GL color.
-     * 
-     * @param gl
-     * @param chars
-     * @param off
-     * @param len
      */
     public void renderChars( GL gl, 
                              float x, 
@@ -345,9 +318,6 @@ public class FontTexture {
      * <p>
      * You MUST push the FontTexture before calling this method.
      * The characters will be rendered using the current GL color.
-     * 
-     * @param gl
-     * @param chars
      */
     public void renderChars( GL gl, CharSequence chars ) {
         renderChars( gl, 0.0f, 0.0f, 0.0f, chars );
@@ -359,9 +329,6 @@ public class FontTexture {
      * <p> 
      * You MUST push the FontTexture before calling this method.
      * The characters will be rendered using the current GL color.
-     * 
-     * @param gl
-     * @param chars
      */
     public void renderChars( GL gl, float x, float y, float z, CharSequence chars ) {
         final int len = chars.length();
@@ -411,8 +378,6 @@ public class FontTexture {
      * <p>
      * Box will be rendered using current GL color.
      * 
-     * @param gl
-     * @param s
      * @param margin  Margin by with box will exceed bounds of text.
      */
     public void renderBox( GL gl, CharSequence s, float margin ) {
@@ -428,13 +393,6 @@ public class FontTexture {
      * offset on your boxes.
      * <p>
      * Box will be rendered using current GL color.
-     * 
-     * @param gl
-     * @param x
-     * @param y
-     * @param z
-     * @param s
-     * @param margin
      */
     public void renderBox( GL gl, float x, float y, float z, CharSequence s, float margin ) {
         renderBox( gl, x, y, z, getCharsWidth( s ), margin );
@@ -449,12 +407,6 @@ public class FontTexture {
      * offset on your boxes.
      * <p>
      * Box will be rendered using current GL color.
-     * 
-     * @param gl
-     * @param chars
-     * @param off
-     * @param len
-     * @param margin
      */
     public void renderBox( GL gl, char[] chars, int off, int len, float margin ) {
         float width = getCharsWidth( chars, off, len );
@@ -470,15 +422,6 @@ public class FontTexture {
      * offset on your boxes.
      * <p>
      * Box will be rendered using current GL color.
-     * 
-     * @param gl
-     * @param x
-     * @param y
-     * @param z
-     * @param chars
-     * @param off
-     * @param len
-     * @param margin
      */
     public void renderBox( GL gl, float x, float y, float z, char[] chars, int off, int len, float margin ) {
         renderBox( gl, x, y, z, getCharsWidth( chars, off, len ), margin );
@@ -493,10 +436,6 @@ public class FontTexture {
      * offset on your boxes.
      * <p>
      * Box will be rendered using current GL color.
-     * 
-     * @param gl
-     * @param width
-     * @param margin
      */
     public void renderBox( GL gl, float width, float margin ) {
         renderBox( gl, 0.0f, 0.0f, 0.0f, width, margin );
@@ -511,13 +450,6 @@ public class FontTexture {
      * offset on your boxes.
      * <p>
      * Box will be rendered using current GL color.
-     * 
-     * @param gl
-     * @param x
-     * @param y
-     * @param z
-     * @param width
-     * @param margin
      */
     public void renderBox( GL gl, float x, float y, float z, float width, float margin ) {
         float descent = getDescent();

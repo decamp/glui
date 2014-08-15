@@ -287,8 +287,6 @@ public class FontUtil {
      * implied to be 0, so on return, the output array holds only the right edge
      * of each glyph.
      * 
-     * @param metrics
-     * @param seq
      * @param out         Holds the right position of each character in the input
      *                    sequence. {@code out.length >= seq.length()}
      * @param outOffset   Offset into {@code out} where output will be written.
@@ -305,8 +303,6 @@ public class FontUtil {
      * implied to be 0, so on return, the output array holds only the right edge
      * of each glyph.
      * 
-     * @param metrics
-     * @param seq
      * @param off         Offset into sequence where input begins.
      * @param len         Length of input to use.
      * @param out         Holds the right position of each character in the input
@@ -356,8 +352,6 @@ public class FontUtil {
      * implied to be 0, so on return, the output array holds only the right edge
      * of each glyph.
      * 
-     * @param metrics
-     * @param chars
      * @param off         Offset into chars where input begins.
      * @param len         Length of input to use.
      * @param out         Holds the right position of each character in the input

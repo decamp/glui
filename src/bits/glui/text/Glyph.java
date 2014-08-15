@@ -5,7 +5,7 @@ class Glyph {
     final char mChar;
     final float mAdvance;
     
-    // Lowel-left corner.
+    // Lower-left corner.
     final int mX0;
     final int mY0;
     final float mS0;

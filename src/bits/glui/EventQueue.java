@@ -2,6 +2,8 @@ package bits.glui;
 
 import bits.glui.event.*;
 
+import java.awt.*;
+
 
 class EventQueue implements GDispatcher {
     
@@ -11,6 +13,7 @@ class EventQueue implements GDispatcher {
     private static final int PRIORITY_MAX     = 3;
     
     private final GComponent mRoot;
+    private final Component mRepaintComp;
     
     private final Queue[] mQueues = new Queue[PRIORITY_MAX];
     
@@ -19,11 +22,12 @@ class EventQueue implements GDispatcher {
     private boolean mIgnoreRepaints = false;
 
 
-    EventQueue( GComponent root ) {
+    EventQueue( GComponent root, Component optRepaintComp ) {
         mRoot = root;
         for( int i = 0; i < mQueues.length; i++ ) {
             mQueues[i] = new Queue();
         }
+        mRepaintComp = optRepaintComp;
     }
 
 
@@ -42,7 +46,12 @@ class EventQueue implements GDispatcher {
         if( mIgnoreRepaints ) {
             return;
         }
-        
+
+        if( mRepaintComp != null ) {
+            mRepaintComp.repaint();
+            return;
+        }
+
         Queue q = mQueues[PRIORITY_REPAINT];
         // Currently, all paint requests repaint entire screen.
         // So there's no point in multiple repaint requests.

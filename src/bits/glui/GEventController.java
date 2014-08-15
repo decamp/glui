@@ -23,7 +23,7 @@ public final class GEventController {
 
     public GEventController( Component optParent, GLayeredPanel optRootPane ) {
         mRoot      = optRootPane != null ? optRootPane : new GLayeredPanel();
-        mQueue     = new EventQueue( mRoot );
+        mQueue     = new EventQueue( mRoot, optParent );
         mProcessor = new EventProcessor( optParent, mRoot );
         mRoot.treeProcessParentChanged( mQueue, null );
     }
