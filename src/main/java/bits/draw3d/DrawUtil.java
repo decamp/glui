@@ -76,14 +76,14 @@ public class DrawUtil {
     }
 
     /**
-     * Returns equivalent OpenGL internalFormat, format and data types for a BufferedImage.
+     * Returns OpenGL [internalFormat, format and data type] equivalents for a BufferedImage.
      * (e.g., GL_BGRA and GL_UNSIGNED_BYTE). It will also specify if the ordering of
      * the DataBuffer component values must be reversed to achieve a GL-compatible format.
      *
      * @param image Some image
      * @param out4  Length-4 array to hold output. On return: <br>
-     *              out3[0] will hold INPUT FORMAT for image. <br>
-     *              out3[1] will hold FORMAT for image. <br>
+     *              out3[0] will hold INTERNAL FORMAT for the texture. <br>
+     *              out3[1] will hold PIXEL FORMAT of the image data. <br>
      *              out3[2] will hold DATA TYPE for image.
      *              out3[3] will equal 1 if component values must be swapped (reverse-ordered), otherwise 0.
      * @return true if equivalent format and data type were found

@@ -1,8 +1,8 @@
 package bits.draw3d.tex;
 
-import bits.draw3d.DrawResource;
+import bits.draw3d.DrawEnv;
 import bits.draw3d.DrawUnit;
-import bits.glui.GGraphics;
+
 
 /**
  * Interface for objects that act as textures, FBOs, or RBOs.
@@ -123,41 +123,41 @@ public interface Texture extends DrawUnit {
 
     /**
      * Initializes the Texture. SHOULD be called automatically as
-     * necessary by {@link #bind(GGraphics)}.{@code init()} has the following behavior:<ul>
+     * necessary by {@link #bind(bits.draw3d.DrawEnv)}.{@code init()} has the following behavior:<ul>
      * <li>If this Texture has no id, generates an id.</li>
      * <li>If this Texture has a defined size, allocates a buffer using the current format.</li>
      * </ul>
      */
-    public void init( GGraphics g );
+    public void init( DrawEnv g );
 
     /**
      * Disposes this Texture's resources.
      */
-    public void dispose( GGraphics g );
+    public void dispose( DrawEnv g );
 
     /**
      * Binds this Texture to it's designated target.
      */
-    public void bind( GGraphics g );
+    public void bind( DrawEnv g );
 
     /**
      * Binds this Texture's designated target to 0.
      */
-    public void unbind( GGraphics g );
+    public void unbind( DrawEnv g );
 
     /**
      * Makes specified texture unit active and binds this texture to that unit.
      */
-    public void bind( GGraphics g, int unit );
+    public void bind( DrawEnv g, int unit );
 
     /**
      * Makes specified texture unit active and unbinds this texture from that unit.
      */
-    public void unbind( GGraphics g, int unit );
+    public void unbind( DrawEnv g, int unit );
 
     /**
      * If autoResizeOnReshape(), produces a call to <tt>size(w, h)</tt>.
      */
-    public void reshape( GGraphics g, int x, int y, int w, int h );
+    public void reshape( DrawEnv g, int x, int y, int w, int h );
 
 }

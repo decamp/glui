@@ -677,8 +677,6 @@ class EventProcessor implements GHumanInputController {
     }
 
 
-    //TODO: I don't think anyone is using the setCount or restartSequence cruft,
-    // which was originally meant to deal with AWT issues that didn't actually exist.
     private static class ClickCounter {
         private long mMicros;
         private int mCount  = 0;
@@ -699,19 +697,8 @@ class EventProcessor implements GHumanInputController {
             return mCount - mOffset;
         }
 
-        public int setCount( int count ) {
-            if( count < mOffset ) {
-                mOffset = 0;
-            }
-            return mCount - mOffset;
-        }
-
         public int current() {
             return mCount;
-        }
-
-        public void restartSequence() {
-            mOffset = mCount;
         }
 
         public void clear() {

@@ -2,10 +2,12 @@ package bits.glui;
 
 import javax.media.opengl.*;
 
+import bits.draw3d.DrawEnv;
+import bits.draw3d.DrawStream;
 import bits.glui.event.*;
-import bits.glui.text.FontTexture;
+import bits.draw3d.text.FontTexture;
+import bits.math3d.Vec4;
 
-import static javax.media.opengl.GL.*;
 
 /**
  * Incredibly crappy right now.  Use only in emergency.
@@ -68,65 +70,61 @@ public class GTextField extends GPanel {
         return mDrawText;
     }
 
-
-    // TODO: Reimplement
     @Override
-    public void paintComponent( GGraphics g ) {
-//        GL gl = g.gl();
-//        final int w = width();
-//        final int h = height();
-//
-//        GColor background = background();
-//
-//        if( background != null ) {
-//            background.apply( gl );
-//            gl.glBegin( GL_QUADS );
-//            gl.glVertex2i( 0, 0 );
-//            gl.glVertex2i( w, 0 );
-//            gl.glVertex2i( w, h );
-//            gl.glVertex2i( 0, h );
-//            gl.glEnd();
-//        }
-//
-//        GColor foreground = foreground();
-//        foreground.apply( gl );
-//        FontTexture font = g.fontManager().getFontTexture( font(), GLContext.getCurrent() );
-//
-//        gl.glMatrixMode( GL_MODELVIEW );
-//        gl.glPushMatrix();
-//        gl.glTranslated( font.getHeight() * 0.1, (h - font.getAscent() + font.getDescent()) / 2.0, 0 );
-//        font.push( gl );
-//        font.renderChars( gl, mDrawText );
-//
-//        int tw;
-//
-//        if( mDrawText.length() >= mMaxLength ) {
-//            tw = (int)font.getCharsWidth( mDrawText.toCharArray(), 0, mMaxLength - 1 );
-//        }else{
-//            tw = (int)font.getCharsWidth( mDrawText );
-//        }
-//
-//        font.pop( gl );
-//        gl.glPopMatrix();
-//
-//        if( mHasFocus ) {
-//            gl.glColor4f( foreground.r(), foreground.g(), foreground.b(), 0.3f );
-//            gl.glBegin( GL_QUADS );
-//            gl.glVertex2i( tw + 5, 3 );
-//            gl.glVertex2i( tw + 10, 3 );
-//            gl.glVertex2i( tw + 10, h - 3 );
-//            gl.glVertex2i( tw + 5, h - 3 );
-//            gl.glEnd();
-//        }
-//
-//        foreground.apply( gl );
-//        gl.glLineWidth( 1f );
-//        gl.glBegin( GL_LINE_LOOP );
-//        gl.glVertex2i( 1, 1 );
-//        gl.glVertex2i( w, 1 );
-//        gl.glVertex2i( w, h );
-//        gl.glVertex2i( 1, h );
-//        gl.glEnd();
+    public void paintComponent( DrawEnv g ) {
+        final DrawStream s = g.drawStream();
+        final int w = width();
+        final int h = height();
+        final Vec4 v = g.mWorkVec4;
+
+        s.config( true, false, false );
+        if( background( v ) ) {
+            s.color( v );
+            s.beginQuads();
+            s.vert( 0, 0 );
+            s.vert( w, 0 );
+            s.vert( w, h );
+            s.vert( 0, h );
+            s.end();
+        }
+
+        foreground( v );
+        s.color( v );
+        FontTexture font = g.fontManager().getFontTexture( font(), GLContext.getCurrent() );
+
+        float yy = Math.round( 0.5f * ( h - font.getAscent() + font.getDescent() ) );
+        font.bind( g );
+        font.renderChars( g, Math.round( font.getHeight() * 0.2f ), yy, 0, mDrawText );
+
+        int tw;
+        if( mDrawText.length() >= mMaxLength ) {
+            tw = (int)font.getCharsWidth( mDrawText.toCharArray(), 0, mMaxLength - 1 );
+        }else{
+            tw = (int)font.getCharsWidth( mDrawText );
+        }
+
+        font.unbind( g );
+        s.config( true, false, false );
+        foreground( v );
+
+        if( mHasFocus ) {
+            s.color( v.x, v.y, v.z, 0.3f );
+            s.beginQuads();
+            s.vert( tw + 5, 3 );
+            s.vert( tw + 10, 3 );
+            s.vert( tw + 10, h - 3 );
+            s.vert( tw + 5, h - 3 );
+            s.end();
+        }
+
+        s.color( v );
+        g.mLineWidth.set( 1f );
+        s.beginLineLoop();
+        s.vert( 1, 1 );
+        s.vert( w - 1, 1 );
+        s.vert( w - 1, h - 1 );
+        s.vert( 1, h - 1 );
+        s.end();
     }
     
     

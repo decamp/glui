@@ -1,11 +1,10 @@
 package bits.glui;
 
 import java.awt.*;
-import javax.media.opengl.*;
-import static javax.media.opengl.GL3.*;
 
 import bits.draw3d.DrawStream;
-import bits.glui.text.FontTexture;
+import bits.draw3d.DrawEnv;
+import bits.draw3d.text.FontTexture;
 import bits.math3d.Vec4;
 
 /**
@@ -65,7 +64,7 @@ public class GLabel extends GPanel {
     }
 
     @Override
-    public void paintComponent( GGraphics g ) {
+    public void paintComponent( DrawEnv g ) {
         DrawStream s = g.drawStream();
 
         int w = width();
@@ -95,7 +94,7 @@ public class GLabel extends GPanel {
             }
             mUpdateLabel = false;
             mLabelX = font.getCharsWidth( txt ) * mHorDst;
-            mLabelY = ( font.getAscent() + font.getDescent() ) * mVertDst + font.getDescent();
+            mLabelY = ( font.getAscent() - font.getDescent() ) * mVertDst;
         }
 
         foreground( v );
@@ -104,15 +103,8 @@ public class GLabel extends GPanel {
         float x = Math.round( w * mHorSrc - mLabelX );
         float y = Math.round( h * mVertSrc - mLabelY );
 
-        g.checkErr();
-        //g.mGl.glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-        g.checkErr();
-
-        //s.color( 0f, 1f, 0f, 1f );
-        s.config( true, true, false );
         font.bind( g );
-
-        font.renderChars( g, x, y, 0, "This is a test of teh santoeh unsc " );
+        font.renderChars( g, x, y, 0, txt );
         font.unbind( g );
     }
 

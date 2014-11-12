@@ -1,7 +1,7 @@
 package bits.draw3d.shader;
 
 import bits.draw3d.*;
-import bits.glui.GGraphics;
+import bits.draw3d.DrawEnv;
 
 import java.util.*;
 import javax.media.opengl.*;
@@ -62,7 +62,7 @@ public class Program implements DrawUnit {
     }
 
 
-    public void init( GGraphics g ) {
+    public void init( DrawEnv g ) {
         GL2ES2 gl = g.mGl;
         mId = gl.glCreateProgram();
         for( Shader s: mShaders ) {
@@ -82,7 +82,7 @@ public class Program implements DrawUnit {
     }
 
 
-    public void bind( GGraphics g ) {
+    public void bind( DrawEnv g ) {
         g.mGl.glUseProgram( mId );
         List<DrawTask> list = mOnBind;
         if( list == null ) {
@@ -95,12 +95,12 @@ public class Program implements DrawUnit {
     }
 
 
-    public void unbind( GGraphics g ) {
+    public void unbind( DrawEnv g ) {
         g.mGl.glUseProgram( 0 );
     }
 
 
-    public void dispose( GGraphics g ) {
+    public void dispose( DrawEnv g ) {
         if( mId != 0 ) {
             g.mGl.glDeleteProgram( mId );
             mId = 0;

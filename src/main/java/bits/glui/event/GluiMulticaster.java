@@ -3,7 +3,7 @@ package bits.glui.event;
 import java.awt.event.*;
 import java.util.EventListener;
 
-import bits.glui.GGraphics;
+import bits.draw3d.DrawEnv;
 
 
 /**
@@ -120,7 +120,7 @@ public class GluiMulticaster implements ActionListener,
     }
     
     
-    public void paint( GGraphics g ) {
+    public void paint( DrawEnv g ) {
         GluiMulticaster c = this;
         do {
             ((GPaintListener)c.mListener).paint( g );

@@ -1,6 +1,6 @@
 #version 330
 
-uniform sampler2D texUnit0;
+uniform sampler2D TEX_UNIT0;
 
 smooth in vec4 color;
 smooth in vec4 tex0;
@@ -17,8 +17,7 @@ float mipmapLevel( in vec2 tex ) {
 
 
 void main() {
-	//fragColor = color * textureLod( texUnit0, tex0, mipmapLevel( tex0 ) );
-	fragColor = color * clamp( texture( texUnit0, tex0.st ).a, 0.0, 1.0 );
+	fragColor = color * textureLod( TEX_UNIT0, tex0.st, mipmapLevel( tex0.st ) );
 	if( fragColor.a <= 0.0 ) {
 		discard;
 	}

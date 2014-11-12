@@ -5,7 +5,8 @@ import java.awt.Component;
 import javax.media.opengl.*;
 import javax.media.opengl.awt.GLCanvas;
 
-import bits.glui.text.FontManager;
+import bits.draw3d.DrawEnv;
+import bits.draw3d.text.FontManager;
 import bits.glui.util.*;
 import static javax.media.opengl.GL.*;
 
@@ -40,7 +41,7 @@ public final class GRootController {
     private final GLEventHandler   mHandler;
     private final GEventController mCont;
     private final InitNode         mInit;
-    private final GGraphics        mGraphics;
+    private final DrawEnv          mGraphics;
 
     private Animator mAnimator = null;
 
@@ -50,7 +51,7 @@ public final class GRootController {
         mHandler = new GLEventHandler();
         mCont = new GEventController( mCanvas, null );
         mInit = new InitNode( mCanvas );
-        mGraphics = new GGraphics();
+        mGraphics = new DrawEnv();
 
         mCanvas.addGLEventListener( mHandler );
         new AwtEventTranslator( mCanvas, mCont.humanInputController() );
@@ -268,7 +269,7 @@ public final class GRootController {
         }
 
 
-        public void init( GGraphics g ) {
+        public void init( DrawEnv g ) {
             if( g.mGld.getChosenGLCapabilities().getDoubleBuffered() ) {
                 mDoubleBuffered = 1;
                 mCanvas.setAutoSwapBufferMode( mAutoSwap );
@@ -307,7 +308,7 @@ public final class GRootController {
         }
 
 
-        public void push( GGraphics g ) {
+        public void push( DrawEnv g ) {
             g.mGl.glDrawBuffer( mDrawBuffer );
             if( mClearBits != 0 ) {
                 g.mGl.glClearColor( mClearColor[0], mClearColor[1], mClearColor[2], mClearColor[3] );
@@ -316,7 +317,7 @@ public final class GRootController {
         }
 
 
-        public void pop( GGraphics g ) {
+        public void pop( DrawEnv g ) {
             if( mDoAutoFlush ) {
                 g.mGl.glFlush();
             }
@@ -352,7 +353,7 @@ public final class GRootController {
 
         @Override
         public void dispose( GLAutoDrawable gld ) {
-            //TODO: Complete disposal path?-
+            //TODO: Complete disposal path?
             mGraphics.dispose( gld );
         }
 

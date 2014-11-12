@@ -1,11 +1,11 @@
 package bits.draw3d.shader;
 
-import bits.glui.GGraphics;
+import bits.draw3d.DrawEnv;
 
 
 /**
  * @author Philip DeCamp
  */
 public interface DrawTask {
-    public void run( GGraphics g );
+    public void run( DrawEnv g );
 }

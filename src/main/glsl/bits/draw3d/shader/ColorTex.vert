@@ -1,6 +1,6 @@
 #version 330
 
-uniform mat4 projViewMat;
+uniform mat4 PROJ_VIEW_MAT;
 
 in vec4 inColor;
 in vec4 inTex0;
@@ -12,6 +12,6 @@ smooth out vec4 tex0;
 void main() {
 	color = inColor;
 	tex0 = inTex0;
-	gl_Position = projViewMat * inVert;
+	gl_Position = PROJ_VIEW_MAT * inVert;
 }
 

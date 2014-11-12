@@ -4,6 +4,7 @@ import java.awt.Font;
 import java.awt.event.*;
 import java.util.*;
 
+import bits.draw3d.DrawEnv;
 import bits.glui.event.*;
 import bits.math3d.Vec;
 import bits.math3d.Vec4;
@@ -724,7 +725,7 @@ public class GPanel implements GComponent {
     }
     
     @Override
-    public void processPaint( GGraphics g ) {
+    public void processPaint( DrawEnv g ) {
         if( !mDisplayed ) {
             return;
         }
@@ -879,7 +880,7 @@ public class GPanel implements GComponent {
     }
     
     
-    protected void paintComponent( GGraphics g ) {
+    protected void paintComponent( DrawEnv g ) {
         GPaintListener c = mPaintCaster;
         if( c != null ) {
             c.paint( g );
@@ -887,7 +888,7 @@ public class GPanel implements GComponent {
     }
 
 
-    protected void paintChildren( GGraphics g ) {
+    protected void paintChildren( DrawEnv g ) {
         if( mChildren.isEmpty() ) {
             return;
         }
@@ -900,9 +901,9 @@ public class GPanel implements GComponent {
         }
     }
 
-    //TODO: Rect rid of rect initialization
-    protected void prepareView( GGraphics g, GComponent p ) {
-        Rect b = new Rect();
+
+    protected void prepareView( DrawEnv g, GComponent p ) {
+        Rect b = g.mWorkRect;
         p.absoluteBounds( b );
         Rect viewport = g.mContextViewport;
 
@@ -914,13 +915,7 @@ public class GPanel implements GComponent {
         g.mProj.setOrtho( 0, w, 0, h, -1, 1 );
         g.mView.identity();
         g.mViewport.set( x, y, w, h );
-
-        // TODO: Reimplement scissor test.
-        // gl.glTranslated(b.minX(), b.minY(), 0.0);
-        // gl.glViewport((int)b.minX(), (int)b.minY(), (int)b.spanX(),
-        // (int)b.spanY());
-        //gl.glViewport( x, y, w, h );
-        // gl.glScissor(x, y, w, h);
+        g.mScissorTest.set( true, x, y, w, h );
     }
 
 

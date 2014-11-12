@@ -1,7 +1,7 @@
 #version 330
 
-uniform mat4 projViewMat;
-uniform mat3 normMat;
+uniform mat4 PROJ_VIEW_MAT;
+uniform mat3 NORM_MAT;
 
 in vec4 inColor;
 in vec3 inNorm;
@@ -15,7 +15,7 @@ smooth out vec3 norm;
 void main() {
 	color = inColor;
 	tex = inTex;
-	norm = normalize( normMat * inNorm );
-	gl_Position = projViewMat * inVert;
+	norm = normalize( NORM_MAT * inNorm );
+	gl_Position = PROJ_VIEW_MAT * inVert;
 }
 

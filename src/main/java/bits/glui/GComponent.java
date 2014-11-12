@@ -3,6 +3,7 @@ package bits.glui;
 import java.awt.Font;
 import java.util.*;
 
+import bits.draw3d.DrawEnv;
 import bits.glui.event.*;
 import bits.math3d.Vec4;
 
@@ -148,7 +149,7 @@ public interface GComponent {
      * Methods that should only be called by dispatcher.
      */
     public void treeProcessLayout();
-    public void processPaint( GGraphics g );
+    public void processPaint( DrawEnv g );
     public void processComponentEvent( GComponentEvent e );
     public void processAncestorEvent( GAncestorEvent e );
     public void processFocusEvent( GFocusEvent e );

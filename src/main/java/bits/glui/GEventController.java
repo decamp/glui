@@ -1,5 +1,6 @@
 package bits.glui;
 
+import bits.draw3d.DrawEnv;
 import bits.math3d.Mat;
 import java.awt.*;
 import static javax.media.opengl.GL.*;
@@ -46,7 +47,7 @@ public final class GEventController {
     }
 
 
-    public void processAll( GGraphics graphics ) {
+    public void processAll( DrawEnv graphics ) {
         processEvents();
         processPaint( graphics );
     }
@@ -57,7 +58,7 @@ public final class GEventController {
     }
 
 
-    public void processPaint( GGraphics g ) {
+    public void processPaint( DrawEnv g ) {
         Rect bounds   = new Rect();
         mRoot.absoluteBounds( bounds );
         Rect viewport = g.mContextViewport;

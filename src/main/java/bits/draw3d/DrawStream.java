@@ -1,16 +1,19 @@
 package bits.draw3d;
 
 import bits.draw3d.shader.*;
-import bits.glui.GGraphics;
 import bits.math3d.*;
 
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.media.opengl.*;
 import static javax.media.opengl.GL3.*;
 
 
 /**
+ * Emulates the old OpenGL immediate mode rendering. Meant largely to help transition old code to new GL versions.
+ *
  * @author Philip DeCamp
  */
 public class DrawStream {
@@ -21,6 +24,10 @@ public class DrawStream {
     private static final int    BIT_TEX     = 1 << 2;
     private static final int    BIT_MAX     = 1 << 3;
 
+    private static final int GEOM_PASSTHROUGH    = 0;
+    private static final int GEOM_LINES_TO_QUADS = 1;
+
+
     private static final int   DEFAULT_BUF_SIZE = 64 * 1024;
     private static final float SCALE_FLOAT      = 255f / 1f;
 
@@ -29,13 +36,15 @@ public class DrawStream {
     private final ByteBuffer mVertBuf;
     private final ByteBuffer mIndBuf;
 
-    private final Config mConfig   = new Config();
-    private final Vert   mVert     = new Vert();
+    private final Config mConfig = new Config();
+    private final Vert   mVert   = new Vert();
 
-    private GGraphics mG;
 
-    private VertWriter[] mVertWriters = new VertWriter[BIT_MAX];
-    private IndWriter    mQuadIndexer = new QuadIndWriter();
+    private DrawEnv mG;
+
+    private final Config                  mKeyConfig   = new Config();
+    private final Map<Config, VertWriter> mWriters     = new HashMap<Config, VertWriter>();
+    private final IndWriter               mQuadIndexer = new QuadIndWriter();
 
 
     private VertWriter mActiveWriter  = null;
@@ -52,12 +61,11 @@ public class DrawStream {
 
     public DrawStream( int bufSize ) {
         mVertBuf = DrawUtil.alloc( bufSize );
-        mIndBuf  = DrawUtil.alloc( bufSize / 16 * 6 / 4 );
+        mIndBuf = DrawUtil.alloc( bufSize / 16 * 6 / 4 );
     }
 
 
-
-    public void init( GGraphics g ) {
+    public void init( DrawEnv g ) {
         mG = g;
         GL3 gl = g.mGl;
 
@@ -80,44 +88,64 @@ public class DrawStream {
 
 
     public void config( boolean color, boolean tex, boolean norm ) {
-        mConfig.mColor = color;
-        mConfig.mTex = tex;
-        mConfig.mNorm = norm;
+        mConfig.set( color, tex, norm, GEOM_PASSTHROUGH );
     }
 
 
     public void beginPoints() {
-        begin( getVertWriter(), null, GL_POINTS, 1 );
+        mKeyConfig.set( mConfig );
+        begin( getVertWriter( mKeyConfig ), null, GL_POINTS, 1 );
     }
 
 
     public void beginLines() {
-        begin( getVertWriter(), null, GL_LINES, 2 );
+        mKeyConfig.set( mConfig );
+        if( mG.mLineWidth.mValue != 1f ) {
+            mKeyConfig.setGeom( GEOM_LINES_TO_QUADS );
+        }
+        begin( getVertWriter( mKeyConfig ), null, GL_LINES, 2 );
     }
 
 
     public void beginLineStrip() {
-        begin( getVertWriter(), null, GL_LINE_STRIP, 2 );
+        mKeyConfig.set( mConfig );
+        if( mG.mLineWidth.mValue != 1f ) {
+            mKeyConfig.setGeom( GEOM_LINES_TO_QUADS );
+        }
+        begin( getVertWriter( mKeyConfig ), null, GL_LINE_STRIP, 2 );
+    }
+
+
+    public void beginLineLoop() {
+        mKeyConfig.set( mConfig );
+        if( mG.mLineWidth.mValue != 1f ) {
+            mKeyConfig.setGeom( GEOM_LINES_TO_QUADS );
+        }
+        begin( getVertWriter( mKeyConfig ), null, GL_LINE_LOOP, 2 );
     }
 
 
     public void beginTris() {
-        begin( getVertWriter(), null, GL_TRIANGLES, 3 );
+        mKeyConfig.set( mConfig );
+        begin( getVertWriter( mKeyConfig ), null, GL_TRIANGLES, 3 );
     }
 
 
     public void beginTriStrip() {
-        begin( getVertWriter(), null, GL_TRIANGLE_STRIP, 3 );
+        mKeyConfig.set( mConfig );
+        begin( getVertWriter( mKeyConfig ), null, GL_TRIANGLE_STRIP, 3 );
     }
 
 
     public void beginQuads() {
-        begin( getVertWriter(), mQuadIndexer, GL_TRIANGLES, 4 );
+        mKeyConfig.set( mConfig );
+        begin( getVertWriter( mKeyConfig ), mQuadIndexer, GL_TRIANGLES, 4 );
     }
 
 
     public void beginQuadStrip() {
-        begin( getVertWriter(), null, GL_TRIANGLE_STRIP, 4 );
+        mKeyConfig.set( mConfig );
+        begin( getVertWriter( mKeyConfig ), null, GL_TRIANGLE_STRIP, 4 );
     }
 
     /**
@@ -320,6 +348,12 @@ public class DrawStream {
     }
 
 
+    public void pointSize( float f ) {
+        mG.mGl.glPointSize( f );
+    }
+
+
+
     private void flush() {
         mVertBuf.clear();
         mG.mGl.glBufferSubData( GL_ARRAY_BUFFER, 0, mVertBuf.remaining(), mVertBuf );
@@ -334,64 +368,19 @@ public class DrawStream {
     }
 
 
-    private VertWriter getVertWriter() {
-        int flags = 0;
-        VertWriter writer = null;
-
-        if( mConfig.mTex ) {
-            flags |= BIT_TEX;
-            if( mConfig.mNorm ) {
-                flags |= BIT_NORM;
-                if( mConfig.mColor ) {
-                    flags |= BIT_COLOR;
-                    writer = mVertWriters[ flags ];
-                    if( writer == null ) {
-                        writer = new ColorNormTexWriter( mG, mVbo[0] );
-                        mVertWriters[ flags ] = writer;
-                    }
-                    return writer;
-
-                } else {
-                    writer = mVertWriters[ flags ];
-                    if( writer == null ) {
-                        writer = new NormTexWriter( mG, mVbo[0] );
-                        mVertWriters[ flags ] = writer;
-                    }
-                    return writer;
-                }
-
-            } else if( mConfig.mColor ) {
-                flags |= BIT_COLOR;
-                writer = mVertWriters[ flags ];
-                if( writer == null ) {
-                    writer = new ColorTexWriter( mG, mVbo[0] );
-                    mVertWriters[ flags ] = writer;
-                }
-                return writer;
-
-            } else {
-                writer = mVertWriters[ flags ];
-                if( writer == null ) {
-                    writer = new TexWriter( mG, mVbo[0] );
-                    mVertWriters[ flags ] = writer;
-                }
-                return writer;
-
-            }
-        } else {
-            flags |= BIT_COLOR;
-            writer = mVertWriters[ flags ];
-            if( writer == null ) {
-                writer = new ColorWriter( mG, mVbo[0] );
-                mVertWriters[ flags ] = writer;
-            }
-            return writer;
+    private VertWriter getVertWriter( Config config ) {
+        config.makeCanonical();
+        VertWriter writer = mWriters.get( config );
+        if( writer == null ) {
+            writer = config.createWriter( mG, mVbo[0] );
+            mWriters.put( new Config( config ), writer );
         }
+        return writer;
     }
 
 
 
-    private static Program createProgram( GGraphics g, String vertPath, String geomPath, String fragPath ) {
+    private static Program createProgram( DrawEnv g, String vertPath, String geomPath, String fragPath ) {
         Program prog = new Program();
         prog.addShader( g.mShaderMan.loadResource( GL_VERTEX_SHADER, SHADER_PATH + '/' + vertPath ) );
         if( geomPath != null ) {
@@ -408,7 +397,7 @@ public class DrawStream {
     }
 
 
-    private static int colorPointer( GGraphics g, Program prog, int off, int stride ) {
+    private static int colorPointer( DrawEnv g, Program prog, int off, int stride ) {
         int index = prog.attrib( ShaderUtil.ATT_COLOR ).mLocation;
         g.mGl.glVertexAttribPointer( index, 4, GL_UNSIGNED_BYTE, true, stride, off );
         g.mGl.glEnableVertexAttribArray( index );
@@ -416,7 +405,7 @@ public class DrawStream {
     }
 
 
-    private static int texPointer( GGraphics g, Program prog, int off, int stride ) {
+    private static int texPointer( DrawEnv g, Program prog, int off, int stride ) {
         int index = prog.attrib( ShaderUtil.ATT_TEX_COORD0 ).mLocation;
         g.mGl.glVertexAttribPointer( index, 4, GL_FLOAT, false, stride, off );
         g.mGl.glEnableVertexAttribArray( index );
@@ -424,7 +413,7 @@ public class DrawStream {
     }
 
 
-    private static int normPointer( GGraphics g, Program prog, int off, int stride ) {
+    private static int normPointer( DrawEnv g, Program prog, int off, int stride ) {
         int index = prog.attrib( ShaderUtil.ATT_NORMAL ).mLocation;
         g.mGl.glVertexAttribPointer( index, 3, GL_FLOAT, false, stride, off );
         g.mGl.glEnableVertexAttribArray( index );
@@ -432,7 +421,7 @@ public class DrawStream {
     }
 
 
-    private static int vertPointer( GGraphics g, Program prog, int off, int stride ) {
+    private static int vertPointer( DrawEnv g, Program prog, int off, int stride ) {
         int index = prog.attrib( ShaderUtil.ATT_VERTEX ).mLocation;
         g.mGl.glVertexAttribPointer( index, 4, GL_FLOAT, false, stride, off );
         g.mGl.glEnableVertexAttribArray( index );
@@ -442,13 +431,84 @@ public class DrawStream {
 
 
     private static class Config {
-        public boolean mColor = true;
-        public boolean mNorm  = false;
-        public boolean mTex   = false;
+
+        private boolean mColor = false;
+        private boolean mNorm  = false;
+        private boolean mTex   = false;
+
+        private int mGeom = GEOM_PASSTHROUGH;
 
 
         public Config() {}
 
+
+        public Config( Config copy ) {
+            set( copy );
+        }
+
+
+
+        public void set( Config copy ) {
+            mColor = copy.mColor;
+            mNorm  = copy.mNorm;
+            mTex   = copy.mTex;
+            mGeom  = copy.mGeom;
+        }
+
+
+        public void set( boolean color, boolean tex, boolean norm, int geom ) {
+            mColor = color;
+            mTex   = tex;
+            mNorm  = norm;
+            mGeom  = geom;
+        }
+
+
+        public void setGeom( int geom ) {
+            mGeom = geom;
+        }
+
+
+        public void makeCanonical() {
+            if( mGeom == GEOM_LINES_TO_QUADS ) {
+                mColor = true;
+                mNorm  = false;
+                mTex   = false;
+            } else if( !mTex ) {
+                mColor = true;
+                mNorm  = false;
+            }
+        }
+
+
+        public VertWriter createWriter( DrawEnv d, int vbo ) {
+            if( mGeom == GEOM_PASSTHROUGH ) {
+                if( !mTex ) {
+                    return new ColorWriter( d, vbo );
+                }
+
+                if( mColor ) {
+                    if( mNorm ) {
+                        return new ColorNormTexWriter( d, vbo );
+                    } else {
+                        return new ColorTexWriter( d, vbo );
+                    }
+                } else {
+                    if( mNorm ) {
+                        return new NormTexWriter( d, vbo );
+                    } else {
+                        return new TexWriter( d, vbo );
+                    }
+                }
+            }
+
+            if( mGeom == GEOM_LINES_TO_QUADS ) {
+                Program prog = createProgram( d, "ColorGeom.vert", "ColorLinesToQuads.geom", "Color.frag" );
+                return new ColorWriter( d, vbo, prog );
+            }
+
+            return null;
+        }
 
         @Override
         public boolean equals( Object obj ) {
@@ -458,17 +518,22 @@ public class DrawStream {
             Config c = (Config)obj;
             return mColor == c.mColor &&
                    mNorm  == c.mNorm  &&
-                   mTex   == c.mTex;
+                   mTex   == c.mTex   &&
+                   mGeom  == c.mGeom;
+
         }
 
         @Override
         public int hashCode() {
-            int ret = mTex ? 1 : 0;
+            int ret = mGeom;
+            if( mTex ) {
+                ret |= 0x08;
+            }
             if( mNorm ) {
-                ret |= 0x2;
+                ret |= 0x10;
             }
             if( mColor ) {
-                ret |= 0x4;
+                ret |= 0x20;
             }
             return ret;
         }
@@ -494,8 +559,12 @@ public class DrawStream {
         final Program mProg;
         final int[] mVao = { 0 };
 
-        public BaseWriter( GGraphics g, int vbo, String vertPath, String geomPath, String fragPath ) {
-            mProg = createProgram( g, vertPath, geomPath, fragPath );
+        public BaseWriter( DrawEnv g, int vbo, String vertPath, String geomPath, String fragPath ) {
+            this( g, vbo, createProgram( g, vertPath, geomPath, fragPath ) );
+        }
+
+        public BaseWriter( DrawEnv g, int vbo, Program prog ) {
+            mProg = prog;
             GL2ES3 gl = g.mGl;
             gl.glGenVertexArrays( 1, mVao, 0 );
             gl.glBindVertexArray( mVao[0] );
@@ -503,13 +572,13 @@ public class DrawStream {
         }
 
         @Override
-        public void bind( GGraphics g ) {
+        public void bind( DrawEnv g ) {
             mProg.bind( g );
             g.mGl.glBindVertexArray( mVao[0] );
         }
 
         @Override
-        public void unbind( GGraphics g ) {
+        public void unbind( DrawEnv g ) {
             g.mGl.glBindVertexArray( 0 );
             mProg.unbind( g );
         }
@@ -519,8 +588,12 @@ public class DrawStream {
 
     private static final class ColorWriter extends BaseWriter {
 
-        public ColorWriter( GGraphics g, int vbo ) {
-            super( g, vbo, "Color.vert", null, "Color.frag" );
+        public ColorWriter( DrawEnv g, int vbo ) {
+            this( g, vbo, createProgram( g, "Color.vert", null, "Color.frag" ) );
+        }
+
+        public ColorWriter( DrawEnv g, int vbo, Program prog ) {
+            super( g, vbo, prog );
             int off = 0;
             off = colorPointer( g, mProg, off, bytesPerVert() );
             off = vertPointer( g, mProg, off, bytesPerVert() );
@@ -543,7 +616,7 @@ public class DrawStream {
 
     private static final class TexWriter extends BaseWriter {
 
-        public TexWriter( GGraphics g, int vbo ) {
+        public TexWriter( DrawEnv g, int vbo ) {
             super( g, vbo, "Tex.vert", null, "Tex.frag" );
             int off = 0;
             off = texPointer( g, mProg, off, bytesPerVert() );
@@ -567,7 +640,7 @@ public class DrawStream {
 
     private static final class ColorTexWriter extends BaseWriter {
 
-        public ColorTexWriter( GGraphics g, int vbo ) {
+        public ColorTexWriter( DrawEnv g, int vbo ) {
             super( g, vbo, "ColorTex.vert", null, "ColorTex.frag" );
             int off = 0;
             off = colorPointer( g, mProg, off, bytesPerVert() );
@@ -593,7 +666,7 @@ public class DrawStream {
 
     private static final class NormTexWriter extends BaseWriter {
 
-        public NormTexWriter( GGraphics g, int vbo ) {
+        public NormTexWriter( DrawEnv g, int vbo ) {
             super( g, vbo, "NormTex.vert", null, "Tex.frag" );
             int off = 0;
             off = normPointer( g, mProg, off, bytesPerVert() );
@@ -619,7 +692,7 @@ public class DrawStream {
 
     private static final class ColorNormTexWriter extends BaseWriter {
 
-        public ColorNormTexWriter( GGraphics g, int vbo ) {
+        public ColorNormTexWriter( DrawEnv g, int vbo ) {
             super( g, vbo, "ColorNormTex.vert", null, "ColorTex.frag" );
             int off = 0;
             off = colorPointer( g, mProg, off, bytesPerVert() );

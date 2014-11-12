@@ -1,6 +1,6 @@
 package bits.draw3d.tex;
 
-import bits.glui.GGraphics;
+import bits.draw3d.DrawEnv;
 
 import java.nio.ByteBuffer;
 
@@ -46,13 +46,13 @@ public final class Texture1 extends AbstractTexture {
     }
 
     @Override
-    public void dispose( GGraphics g  ) {
+    public void dispose( DrawEnv g  ) {
         super.dispose( g );
         mBuf = null;
     }
 
     @Override
-    protected void doAlloc( GGraphics g ) {
+    protected void doAlloc( DrawEnv g ) {
         g.mGl.glTexImage1D( GL_TEXTURE_1D,
                             0, //level
                             internalFormat(),

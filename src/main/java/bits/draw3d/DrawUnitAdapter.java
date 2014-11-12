@@ -1,14 +1,12 @@
 package bits.draw3d;
 
-import bits.glui.GGraphics;
-
 
 /**
  * @author Philip DeCamp
  */
 public class DrawUnitAdapter implements DrawUnit {
-    public void bind( GGraphics g ) {}
-    public void unbind( GGraphics g ) {}
-    public void init( GGraphics g ) {}
-    public void dispose( GGraphics g ) {}
+    public void bind( DrawEnv g ) {}
+    public void unbind( DrawEnv g ) {}
+    public void init( DrawEnv g ) {}
+    public void dispose( DrawEnv g ) {}
 }

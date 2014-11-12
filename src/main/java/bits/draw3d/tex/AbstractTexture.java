@@ -1,6 +1,6 @@
 package bits.draw3d.tex;
 
-import bits.glui.GGraphics;
+import bits.draw3d.DrawEnv;
 
 import javax.media.opengl.*;
 import java.util.*;
@@ -149,7 +149,7 @@ abstract class AbstractTexture implements Texture {
     }
 
     @Override
-    public void init( GGraphics g ) {
+    public void init( DrawEnv g ) {
         if( mNeedInit ) {
             doInit( g );
             unbind( g );
@@ -157,7 +157,7 @@ abstract class AbstractTexture implements Texture {
     }
 
     @Override
-    public void dispose( GGraphics g ) {
+    public void dispose( DrawEnv g ) {
         if( mId[0] != 0 ) {
             g.mGl.glDeleteTextures( 1, mId, 0 );
             mId[0] = 0;
@@ -167,7 +167,7 @@ abstract class AbstractTexture implements Texture {
     }
 
     @Override
-    public void bind( GGraphics g ) {
+    public void bind( DrawEnv g ) {
         if( mNeedInit ) {
             doInit( g );
         }
@@ -175,24 +175,24 @@ abstract class AbstractTexture implements Texture {
     }
 
     @Override
-    public void bind( GGraphics g, int unit ) {
+    public void bind( DrawEnv g, int unit ) {
         g.mGl.glActiveTexture( GL_TEXTURE0 + unit );
         bind( g );
     }
 
     @Override
-    public void unbind( GGraphics g ) {
+    public void unbind( DrawEnv g ) {
         g.mGl.glBindTexture( mTarget, 0 );
     }
 
     @Override
-    public void unbind( GGraphics g, int unit ) {
+    public void unbind( DrawEnv g, int unit ) {
         g.mGl.glActiveTexture( GL_TEXTURE0 + unit );
         unbind( g );
     }
 
     @Override
-    public void reshape( GGraphics g, int x, int y, int w, int h ) {
+    public void reshape( DrawEnv g, int x, int y, int w, int h ) {
         if( resizeOnReshape() ) {
             size( w, h );
         }
@@ -208,10 +208,10 @@ abstract class AbstractTexture implements Texture {
         mNeedAlloc = true;
     }
 
-    protected abstract void doAlloc( GGraphics g  );
+    protected abstract void doAlloc( DrawEnv g  );
 
 
-    private void doInit( GGraphics g ) {
+    private void doInit( DrawEnv g ) {
         if( !mNeedInit ) {
             return;
         }

@@ -1,6 +1,6 @@
 package bits.draw3d.tex;
 
-import bits.glui.GGraphics;
+import bits.draw3d.DrawEnv;
 
 import java.nio.ByteBuffer;
 import static javax.media.opengl.GL2GL3.*;
@@ -47,7 +47,7 @@ public final class Texture3 extends AbstractTexture {
     }
 
     @Override
-    protected void doAlloc( GGraphics g ) {
+    protected void doAlloc( DrawEnv g ) {
         g.mGl.glTexImage3D( GL_TEXTURE_3D,
                             0, // Level
                             internalFormat(),

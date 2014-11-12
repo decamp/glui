@@ -1,7 +1,7 @@
 package bits.draw3d.tex;
 
 import bits.draw3d.DrawUtil;
-import bits.glui.GGraphics;
+import bits.draw3d.DrawEnv;
 
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
@@ -65,13 +65,13 @@ public class Mipmap2 extends AbstractTexture {
     public void size( int w, int h ) {}
 
     @Override
-    public void dispose( GGraphics g ) {
+    public void dispose( DrawEnv g ) {
         super.dispose( g );
         mBuf = null;
     }
 
     @Override
-    protected synchronized void doAlloc( GGraphics g ) {
+    protected synchronized void doAlloc( DrawEnv g ) {
         g.mGl.glTexImage2D( GL_TEXTURE_2D,
                             0, //level
                             internalFormat(),
