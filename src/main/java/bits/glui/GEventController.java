@@ -1,9 +1,6 @@
 package bits.glui;
 
-
 import bits.math3d.Mat;
-
-import javax.media.opengl.*;
 import java.awt.*;
 import static javax.media.opengl.GL.*;
 
@@ -61,13 +58,12 @@ public final class GEventController {
 
 
     public void processPaint( GGraphics g ) {
-        GL3 gl        = g.mGl;
-        Rect bounds   = mRoot.absoluteBounds();
+        Rect bounds   = new Rect();
+        mRoot.absoluteBounds( bounds );
         Rect viewport = g.mContextViewport;
 
         Mat.identity( g.mProj.get() );
-        Mat.ortho( 0, bounds.maxX(), 0, bounds.maxY(), -1, 1, g.mView.get() );
-        g.mView.identity();
+        g.mView.setOrtho( 0, bounds.width(), 0, bounds.height(), -1, 1 );
 
         g.mDepthTest.push();
         g.mDepthTest.set( false, GL_LESS );

@@ -68,64 +68,65 @@ public class GTextField extends GPanel {
         return mDrawText;
     }
 
-    
+
+    // TODO: Reimplement
     @Override
     public void paintComponent( GGraphics g ) {
-        GL gl = g.gl();
-        final int w = width();
-        final int h = height();
-
-        GColor background = background();
-        
-        if( background != null ) {
-            background.apply( gl );
-            gl.glBegin( GL_QUADS );
-            gl.glVertex2i( 0, 0 );
-            gl.glVertex2i( w, 0 );
-            gl.glVertex2i( w, h );
-            gl.glVertex2i( 0, h );
-            gl.glEnd();
-        }
-
-        GColor foreground = foreground();
-        foreground.apply( gl );
-        FontTexture font = g.fontManager().getFontTexture( font(), GLContext.getCurrent() );
-
-        gl.glMatrixMode( GL_MODELVIEW );
-        gl.glPushMatrix();
-        gl.glTranslated( font.getHeight() * 0.1, (h - font.getAscent() + font.getDescent()) / 2.0, 0 );
-        font.push( gl );
-        font.renderChars( gl, mDrawText );
-
-        int tw;
-
-        if( mDrawText.length() >= mMaxLength ) {
-            tw = (int)font.getCharsWidth( mDrawText.toCharArray(), 0, mMaxLength - 1 );
-        }else{
-            tw = (int)font.getCharsWidth( mDrawText );
-        }
-
-        font.pop( gl );
-        gl.glPopMatrix();
-        
-        if( mHasFocus ) {
-            gl.glColor4f( foreground.r(), foreground.g(), foreground.b(), 0.3f );
-            gl.glBegin( GL_QUADS );
-            gl.glVertex2i( tw + 5, 3 );
-            gl.glVertex2i( tw + 10, 3 );
-            gl.glVertex2i( tw + 10, h - 3 );
-            gl.glVertex2i( tw + 5, h - 3 );
-            gl.glEnd();
-        }
-
-        foreground.apply( gl );
-        gl.glLineWidth( 1f );
-        gl.glBegin( GL_LINE_LOOP );
-        gl.glVertex2i( 1, 1 );
-        gl.glVertex2i( w, 1 );
-        gl.glVertex2i( w, h );
-        gl.glVertex2i( 1, h );
-        gl.glEnd();
+//        GL gl = g.gl();
+//        final int w = width();
+//        final int h = height();
+//
+//        GColor background = background();
+//
+//        if( background != null ) {
+//            background.apply( gl );
+//            gl.glBegin( GL_QUADS );
+//            gl.glVertex2i( 0, 0 );
+//            gl.glVertex2i( w, 0 );
+//            gl.glVertex2i( w, h );
+//            gl.glVertex2i( 0, h );
+//            gl.glEnd();
+//        }
+//
+//        GColor foreground = foreground();
+//        foreground.apply( gl );
+//        FontTexture font = g.fontManager().getFontTexture( font(), GLContext.getCurrent() );
+//
+//        gl.glMatrixMode( GL_MODELVIEW );
+//        gl.glPushMatrix();
+//        gl.glTranslated( font.getHeight() * 0.1, (h - font.getAscent() + font.getDescent()) / 2.0, 0 );
+//        font.push( gl );
+//        font.renderChars( gl, mDrawText );
+//
+//        int tw;
+//
+//        if( mDrawText.length() >= mMaxLength ) {
+//            tw = (int)font.getCharsWidth( mDrawText.toCharArray(), 0, mMaxLength - 1 );
+//        }else{
+//            tw = (int)font.getCharsWidth( mDrawText );
+//        }
+//
+//        font.pop( gl );
+//        gl.glPopMatrix();
+//
+//        if( mHasFocus ) {
+//            gl.glColor4f( foreground.r(), foreground.g(), foreground.b(), 0.3f );
+//            gl.glBegin( GL_QUADS );
+//            gl.glVertex2i( tw + 5, 3 );
+//            gl.glVertex2i( tw + 10, 3 );
+//            gl.glVertex2i( tw + 10, h - 3 );
+//            gl.glVertex2i( tw + 5, h - 3 );
+//            gl.glEnd();
+//        }
+//
+//        foreground.apply( gl );
+//        gl.glLineWidth( 1f );
+//        gl.glBegin( GL_LINE_LOOP );
+//        gl.glVertex2i( 1, 1 );
+//        gl.glVertex2i( w, 1 );
+//        gl.glVertex2i( w, h );
+//        gl.glVertex2i( 1, h );
+//        gl.glEnd();
     }
     
     

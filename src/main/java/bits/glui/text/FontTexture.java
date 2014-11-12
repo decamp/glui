@@ -1,12 +1,17 @@
 package bits.glui.text;
 
+import bits.draw3d.*;
+import bits.draw3d.tex.Mipmap2;
+import bits.draw3d.tex.Texture2;
+import bits.glui.GGraphics;
+import bits.util.gui.ImagePanel;
+
 import java.awt.*;
 import java.awt.font.FontRenderContext;
 import java.awt.image.*;
 import java.nio.*;
 
-import javax.media.opengl.GL;
-import static javax.media.opengl.GL.*;
+import static javax.media.opengl.GL2ES2.*;
 import javax.media.opengl.glu.GLU;
 
 
@@ -33,33 +38,33 @@ import javax.media.opengl.glu.GLU;
  * 
  * @author Philip DeCamp
  */
-public class FontTexture {
+public class FontTexture implements DrawUnit {
 
     private static final GLU GLU_INST = new GLU();
-    
-    
-    private final Font              mFont;
-    private final FontMetrics       mMetrics;
-    private final GlyphMap          mGlyphs;
-    private final ImageTextureNode  mTexture;
-    
-    private final int[]             mBlendRevert = { 0 };
-    
+
+
+    private final Font        mFont;
+    private final FontMetrics mMetrics;
+    private final GlyphMap    mGlyphs;
+    private final Texture2    mTexture;
+
+    private final int[] mBlendRevert = { 0 };
+
 
     public FontTexture( Font font ) {
         this( font, CharSet.DEFAULT );
     }
-    
-    
+
+
     public FontTexture( Font font, CharSet chars ) {
-        mFont    = font;
+        mFont = font;
         mMetrics = FontUtil.metrics( font );
-        mGlyphs  = GlyphMaps.newGlyphMap( chars );
-        
-        int dim    = 256;
+        mGlyphs = GlyphMaps.newGlyphMap( chars );
+
+        int dim = 256;
         int margin = 4;
         computeGlyphSizes( mMetrics, margin, mGlyphs );
-        
+
         // Brute force size determination.  Whatevs.
         while( !layoutGlyphs( dim, dim, mGlyphs, null ) ) {
             dim <<= 1;
@@ -67,65 +72,68 @@ public class FontTexture {
                 throw new InstantiationError( "Font size too large for memory: " + mFont.getSize() );
             }
         }
-        
-        BufferedImage im = new BufferedImage( dim, dim, BufferedImage.TYPE_BYTE_GRAY );
+
+        BufferedImage im = new BufferedImage( dim, dim, BufferedImage.TYPE_INT_ARGB );
         Graphics2D g = (Graphics2D)im.getGraphics();
         g.setRenderingHint( RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON );
+        g.setRenderingHint( RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON );
         g.setFont( mFont );
-        g.setBackground( Color.BLACK );
+        g.setBackground( new Color( 0, 0, 0, 0 ) );
         g.clearRect( 0, 0, dim, dim );
         g.setColor( Color.WHITE );
-        
+
         layoutGlyphs( dim, dim, mGlyphs, g );
         mGlyphs.optimize();
-        
-        //ImagePanel.showImage( im );
-        ByteBuffer buf = bufferGrayscale( im );
-        mTexture = new ImageTextureNode( buf, im.getWidth(), im.getHeight() );
+
+        ImagePanel.showImage( im );
+
+        //ByteBuffer buf = bufferGrayscale( im );
+        mTexture = new Texture2();
+        //mTexture.param( GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+        mTexture.param( GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+        //mTexture.param( GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+        //mTexture.param( GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+        mTexture.buffer( im );
     }
+
 
 
     /**
      * You MUST call this method before using texture for rendering.
      */
-    public void push( GL gl ) {
-        gl.glGetIntegerv( GL_BLEND, mBlendRevert, 0 );
-        gl.glEnable( GL_BLEND );
-
+    public void bind( GGraphics g ) {
+        g.mBlend.push();
+        g.mBlend.set( true );
         if( mTexture == null ) {
-            load( gl );
+            init( g );
         }
-
-        mTexture.pushDraw( gl );
+        mTexture.bind( g );
     }
 
     /**
      * You MUST call this method after you are done using texture for rendering.
      */
-    public void pop( GL gl ) {
-        if( mTexture == null )
+    public void unbind( GGraphics g ) {
+        if( mTexture == null ) {
             return;
-
-        mTexture.popDraw( gl );
-
-        if( mBlendRevert[0] == 0 ) {
-            gl.glDisable( GL_BLEND );
         }
+        mTexture.unbind( g );
+        g.mBlend.pop();
     }
 
     /**
      * This method will be called automatically, but you can call it 
      * manually for initialization scheduling purposes.
      */
-    public void load( GL gl ) {
-        mTexture.init( gl );
+    public void init( GGraphics g ) {
+        mTexture.init( g );
     }
     
     /**
      * Call to unload resources. After unloaded, the texture CANNOT be used again.
      */
-    public void unload( GL gl ) {
-        mTexture.dispose( gl );
+    public void dispose( GGraphics g ) {
+        mTexture.dispose( g );
     }
 
     
@@ -259,10 +267,10 @@ public class FontTexture {
      * You MUST push the FontTexture before calling this method.
      * The characters will be rendered using the current GL color.
      */
-    public void renderChars( GL gl, char[] chars, int off, int len ) {
-        renderChars( gl, 0.0f, 0.0f, 0.0f, chars, off, len );
+    public void renderChars( GGraphics g, char[] chars, int off, int len ) {
+        renderChars( g, 0.0f, 0.0f, 0.0f, chars, off, len );
     }
-    
+
     /**
      * Renders character sequence to screen using [x, y, z]
      * as the start of the baseline.
@@ -270,7 +278,7 @@ public class FontTexture {
      * You MUST push the FontTexture before calling this method.
      * The characters will be rendered using the current GL color.
      */
-    public void renderChars( GL gl, 
+    public void renderChars( GGraphics gg,
                              float x, 
                              float y, 
                              float z,
@@ -280,36 +288,30 @@ public class FontTexture {
     {
         float xx = x;
         float yy = y;
-        
-        gl.glBegin( GL_QUADS );
+        DrawStream s = gg.drawStream();
+        s.beginQuads();
 
         for( int i = 0; i < len; i++ ) {
             char c = chars[i + off];
-
             if( c == '\n' ) {
                 xx = x;
                 yy -= mMetrics.getHeight();
                 continue;
             }
-            
-            Glyph g = mGlyphs.get( c );
-            
-            gl.glTexCoord2f( g.mS0, g.mT0 );
-            gl.glVertex3f( g.mX0 + xx, g.mY0 + yy, z );
 
-            gl.glTexCoord2f( g.mS1, g.mT0 );
-            gl.glVertex3f( g.mX1 + xx, g.mY0 + yy, z );
-            
-            gl.glTexCoord2f( g.mS1, g.mT1 );
-            gl.glVertex3f( g.mX1 + xx, g.mY1 + yy, z );
-            
-            gl.glTexCoord2f( g.mS0, g.mT1 );
-            gl.glVertex3f( g.mX0 + xx, g.mY1 + yy, z );
-            
+            Glyph g = mGlyphs.get( c );
+            s.tex( g.mS0, g.mT0 );
+            s.vert( g.mX0 + xx, g.mY0 + yy, z );
+            s.tex( g.mS1, g.mT0 );
+            s.vert( g.mX1 + xx, g.mY0 + yy, z );
+            s.tex( g.mS1, g.mT1 );
+            s.vert( g.mX1 + xx, g.mY1 + yy, z );
+            s.tex( g.mS0, g.mT1 );
+            s.vert( g.mX0 + xx, g.mY1 + yy, z );
             xx += g.mAdvance;
         }
 
-        gl.glEnd();
+        s.end();
     }
     
     /**
@@ -319,10 +321,10 @@ public class FontTexture {
      * You MUST push the FontTexture before calling this method.
      * The characters will be rendered using the current GL color.
      */
-    public void renderChars( GL gl, CharSequence chars ) {
-        renderChars( gl, 0.0f, 0.0f, 0.0f, chars );
+    public void renderChars( GGraphics g, CharSequence chars ) {
+        renderChars( g, 0.0f, 0.0f, 0.0f, chars );
     }
-    
+
     /**
      * Renders character sequence to screen using [x, y, z]
      * as the start of the baseline.
@@ -330,41 +332,80 @@ public class FontTexture {
      * You MUST push the FontTexture before calling this method.
      * The characters will be rendered using the current GL color.
      */
-    public void renderChars( GL gl, float x, float y, float z, CharSequence chars ) {
+    //TODO:  FIX
+    int testCount = 0;
+
+    public void renderChars( GGraphics gg, float x, float y, float z, CharSequence chars ) {
         final int len = chars.length();
         float xx = x;
         float yy = y;
-        
-        gl.glBegin( GL_QUADS );
+        DrawStream s = gg.drawStream();
 
-        for( int i = 0; i < len; i++ ) {
-            char c = chars.charAt( i );
+        if( ( testCount++ & 1 ) == 1 ) {
+            s.beginQuads();
 
-            if( c == '\n' ) {
-                xx = x;
-                yy -= mMetrics.getHeight();
-                continue;
+            for( int i = 0; i < len; i++ ) {
+                char c = chars.charAt( i );
+
+                if( c == '\n' ) {
+                    xx = x;
+                    yy -= mMetrics.getHeight();
+                    continue;
+                }
+
+                Glyph g = mGlyphs.get( c );
+                s.tex( g.mS0, g.mT0 );
+                s.vert( g.mX0 + xx, g.mY0 + yy, z );
+                s.tex( g.mS1, g.mT0 );
+                s.vert( g.mX1 + xx, g.mY0 + yy, z );
+                s.tex( g.mS1, g.mT1 );
+                s.vert( g.mX1 + xx, g.mY1 + yy, z );
+
+                s.tex( g.mS0, g.mT1 );
+                s.vert( g.mX0 + xx, g.mY1 + yy, z );
+//
+//            s.tex( g.mS0, g.mT0 );
+//            s.vert( g.mX0 + xx, g.mY0 + yy, z );
+//            s.tex( g.mS1, g.mT1 );
+//            s.vert( g.mX1 + xx, g.mY1 + yy, z );
+//            s.tex( g.mS0, g.mT1 );
+//            s.vert( g.mX0 + xx, g.mY1 + yy, z );
+                xx += g.mAdvance;
             }
-            
-            Glyph g = mGlyphs.get( c );
-            
-            gl.glTexCoord2f( g.mS0, g.mT0 );
-            gl.glVertex3f( g.mX0 + xx, g.mY0 + yy, z );
 
-            gl.glTexCoord2f( g.mS1, g.mT0 );
-            gl.glVertex3f( g.mX1 + xx, g.mY0 + yy, z );
-            
-            gl.glTexCoord2f( g.mS1, g.mT1 );
-            gl.glVertex3f( g.mX1 + xx, g.mY1 + yy, z );
-            
-            gl.glTexCoord2f( g.mS0, g.mT1 );
-            gl.glVertex3f( g.mX0 + xx, g.mY1 + yy, z );
-            
-            xx += g.mAdvance;
+            s.end();
+        } else {
+            s.beginTris();
+            for( int i = 0; i < len; i++ ) {
+                char c = chars.charAt( i );
+                if( c == '\n' ) {
+                    xx = x;
+                    yy -= mMetrics.getHeight();
+                    continue;
+                }
+
+                Glyph g = mGlyphs.get( c );
+                s.tex( g.mS0, g.mT0 );
+                s.vert( g.mX0 + xx, g.mY0 + yy, z );
+                s.tex( g.mS1, g.mT0 );
+                s.vert( g.mX1 + xx, g.mY0 + yy, z );
+                s.tex( g.mS1, g.mT1 );
+                s.vert( g.mX1 + xx, g.mY1 + yy, z );
+
+//                s.tex( g.mS0, g.mT1 );
+//                s.vert( g.mX0 + xx, g.mY1 + yy, z );
+//
+            s.tex( g.mS0, g.mT0 );
+            s.vert( g.mX0 + xx, g.mY0 + yy, z );
+            s.tex( g.mS1, g.mT1 );
+            s.vert( g.mX1 + xx, g.mY1 + yy, z );
+            s.tex( g.mS0, g.mT1 );
+            s.vert( g.mX0 + xx, g.mY1 + yy, z );
+                xx += g.mAdvance;
+            }
+            s.end();
         }
-
-        gl.glEnd();
-    }
+   }
     
     
     
@@ -380,8 +421,8 @@ public class FontTexture {
      * 
      * @param margin  Margin by with box will exceed bounds of text.
      */
-    public void renderBox( GL gl, CharSequence s, float margin ) {
-        renderBox( gl, 0.0f, 0.0f, 0.0f, getCharsWidth( s ), margin );
+    public void renderBox( GGraphics g, CharSequence s, float margin ) {
+        renderBox( g, 0.0f, 0.0f, 0.0f, getCharsWidth( s ), margin );
     }
     
     /**
@@ -394,8 +435,8 @@ public class FontTexture {
      * <p>
      * Rect will be rendered using current GL color.
      */
-    public void renderBox( GL gl, float x, float y, float z, CharSequence s, float margin ) {
-        renderBox( gl, x, y, z, getCharsWidth( s ), margin );
+    public void renderBox( GGraphics g, float x, float y, float z, CharSequence s, float margin ) {
+        renderBox( g, x, y, z, getCharsWidth( s ), margin );
     }
     
     /**
@@ -408,9 +449,9 @@ public class FontTexture {
      * <p>
      * Rect will be rendered using current GL color.
      */
-    public void renderBox( GL gl, char[] chars, int off, int len, float margin ) {
+    public void renderBox( GGraphics g, char[] chars, int off, int len, float margin ) {
         float width = getCharsWidth( chars, off, len );
-        renderBox( gl, width, margin );
+        renderBox( g, width, margin );
     }
 
     /**
@@ -423,8 +464,8 @@ public class FontTexture {
      * <p>
      * Rect will be rendered using current GL color.
      */
-    public void renderBox( GL gl, float x, float y, float z, char[] chars, int off, int len, float margin ) {
-        renderBox( gl, x, y, z, getCharsWidth( chars, off, len ), margin );
+    public void renderBox( GGraphics g, float x, float y, float z, char[] chars, int off, int len, float margin ) {
+        renderBox( g, x, y, z, getCharsWidth( chars, off, len ), margin );
     }
 
     /**
@@ -437,10 +478,10 @@ public class FontTexture {
      * <p>
      * Rect will be rendered using current GL color.
      */
-    public void renderBox( GL gl, float width, float margin ) {
-        renderBox( gl, 0.0f, 0.0f, 0.0f, width, margin );
+    public void renderBox( GGraphics g, float width, float margin ) {
+        renderBox( g, 0.0f, 0.0f, 0.0f, width, margin );
     }
-    
+
     /**
      * Convenience method for rendering a box that will surround text.
      * The FontTexture MUST NOT be pushed before calling this method.
@@ -451,16 +492,17 @@ public class FontTexture {
      * <p>
      * Rect will be rendered using current GL color.
      */
-    public void renderBox( GL gl, float x, float y, float z, float width, float margin ) {
+    public void renderBox( GGraphics g, float x, float y, float z, float width, float margin ) {
+        DrawStream s = g.drawStream();
         float descent = getDescent();
         float ascent  = getAscent();
-        
-        gl.glBegin( GL_QUADS );
-        gl.glVertex3f( x - margin        , y - descent, z );
-        gl.glVertex3f( x + width + margin, y - descent, z );
-        gl.glVertex3f( x + width + margin, y + ascent,  z );
-        gl.glVertex3f( x - margin        , y + ascent,  z );
-        gl.glEnd();
+
+        s.beginQuads();
+        s.vert( x - margin, y - descent, z );
+        s.vert( x + width + margin, y - descent, z );
+        s.vert( x + width + margin, y + ascent, z );
+        s.vert( x - margin, y + ascent, z );
+        s.end();
     }
 
     
@@ -574,82 +616,5 @@ public class FontTexture {
         return ret;
     }
     
-    
-    
-    private static class ImageTextureNode {
-        
-        private final int[] mId       = { 0 };
-        private final int[] mRevert   = { 0, 0 };
-        
-        private final int  mWidth;
-        private final int  mHeight;
-        
-        private ByteBuffer mBuf   = null;
-        private boolean mNeedInit = true;
-        
-        
-        public ImageTextureNode( ByteBuffer buf, int w, int h ) {
-            mBuf    = buf;
-            mWidth  = w;
-            mHeight = h;
-        }
-        
-        
-        void dispose( GL gl ) {
-            if( mId[0] != 0 ) {
-                gl.glDeleteTextures( 1, mId, 0 );
-                mId[0] = 0;
-            }
-            
-            mBuf      = null;
-            mNeedInit = false;
-        }
-        
-        void bind( GL gl ) {
-            if( mNeedInit ) {
-                init( gl );
-            }
-
-            gl.glBindTexture( GL_TEXTURE_2D, mId[0] );
-        }
-        
-        void pushDraw( GL gl ) {
-            gl.glGetIntegerv( GL_TEXTURE_2D, mRevert, 0 );
-            gl.glGetIntegerv( GL_TEXTURE_BINDING_2D, mRevert, 1 );
-            bind( gl );
-            gl.glEnable( GL_TEXTURE_2D );
-        }
-        
-        void popDraw( GL gl ) {
-            if( mRevert[0] == 0 ) {
-                gl.glDisable( GL_TEXTURE_2D );
-            }
-            gl.glBindTexture( GL_TEXTURE_2D, mRevert[1] );
-        }
-        
-        
-        private synchronized void init( GL gl ) {
-            if( !mNeedInit ) {
-                return;
-            }
-            
-            mNeedInit = false;
-            
-            gl.glGenTextures( 1, mId, 0 );
-            if( mId[0] == 0 ) {
-                throw new RuntimeException( "Failed to allocate texture." );
-            }
-            
-            gl.glBindTexture( GL_TEXTURE_2D, mId[0] );
-            gl.glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
-            gl.glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-            
-            if( mBuf != null ) {
-                GLU_INST.gluBuild2DMipmaps( GL_TEXTURE_2D, GL_ALPHA, mWidth, mHeight, GL_ALPHA, GL_UNSIGNED_BYTE, mBuf );
-                mBuf = null;
-            }
-        }
-        
-    }
 
 }

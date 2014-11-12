@@ -1,11 +1,12 @@
 package bits.glui;
 
-import java.awt.Font;
+import java.awt.*;
 import javax.media.opengl.*;
+import static javax.media.opengl.GL3.*;
 
-import bits.glui.event.GPaintListener;
+import bits.draw3d.DrawStream;
 import bits.glui.text.FontTexture;
-import static javax.media.opengl.GL.*;
+import bits.math3d.Vec4;
 
 /**
  * @author Philip DeCamp
@@ -56,56 +57,63 @@ public class GLabel extends GPanel {
         return this;
     }
 
-    
     @Override
     public GLabel font( Font font ) {
         super.font( font );
         mUpdateLabel = true;
         return this;
     }
-        
 
     @Override
     public void paintComponent( GGraphics g ) {
-        GL gl = g.mGl;
+        DrawStream s = g.drawStream();
+
         int w = width();
         int h = height();
-        GColor foreground = foreground();
-        GColor background = background();
+        Vec4 v = g.mWorkVec4;
 
-        if( background != null ) {
-            background.apply( gl );
-            gl.glBegin( GL_QUADS );
-            gl.glVertex2i( 0, 0 );
-            gl.glVertex2i( w, 0 );
-            gl.glVertex2i( w, h );
-            gl.glVertex2i( 0, h );
-            gl.glEnd();
+        if( background( v ) ) {
+            s.config( true, false, false );
+            s.beginTriStrip();
+            s.color( v );
+            s.tex( 0, 0 );
+            s.vert( 0, 0 );
+            s.tex( 1, 0 );
+            s.vert( w, 0 );
+            s.tex( 0, 1 );
+            s.vert( 0, h );
+            s.tex( 1, 1 );
+            s.vert( w, h );
+            s.end();
         }
-        
-        String s = text();
-        FontTexture font = g.mFontManager.getFontTexture( font() );
 
+        String txt = text();
+        FontTexture font = g.mFontMan.getFontTexture( font() );
         if( mUpdateLabel ) {
-            if( s == null || s.length() == 0 )
+            if( txt == null || txt.isEmpty() ) {
                 return;
-            
+            }
             mUpdateLabel = false;
-            mLabelX = font.getCharsWidth( s ) * mHorDst;
+            mLabelX = font.getCharsWidth( txt ) * mHorDst;
             mLabelY = ( font.getAscent() + font.getDescent() ) * mVertDst + font.getDescent();
         }
-        
-        foreground.apply( gl );
-        gl.glPushMatrix();
-        
+
+        foreground( v );
+        s.color( v );
+
         float x = Math.round( w * mHorSrc - mLabelX );
         float y = Math.round( h * mVertSrc - mLabelY );
-        
-        font.push( gl );
-        font.renderChars( gl, x, y, 0, s );
-        font.pop( gl );
-        
-        gl.glPopMatrix();
+
+        g.checkErr();
+        //g.mGl.glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+        g.checkErr();
+
+        //s.color( 0f, 1f, 0f, 1f );
+        s.config( true, true, false );
+        font.bind( g );
+
+        font.renderChars( g, x, y, 0, "This is a test of teh santoeh unsc " );
+        font.unbind( g );
     }
 
 }

@@ -4,7 +4,7 @@ import java.awt.Font;
 import java.util.*;
 
 import bits.glui.event.*;
-
+import bits.math3d.Vec4;
 
 
 /**
@@ -22,8 +22,15 @@ public interface GComponent {
     public void addChild( GComponent pane );
     public void removeChild( GComponent pane );
     public void clearChildren();
-    
-    public Rect bounds();
+
+    public void bounds( Rect out );
+    /**
+     * Retrieves the absolute bounds of a component, or the bounds within the frame.
+     * If the component is not installed, it's relative bounds will be reported is its absolute bounds.
+     *
+     * @param out Receives absolute bounds of component.
+     */
+    public void absoluteBounds( Rect out );
     public Rect absoluteBounds();
     public int x();
     public int y();
@@ -45,11 +52,46 @@ public interface GComponent {
      *        All ancestors of this component are visible.
      */
     public boolean isDisplayed();
-    
-    public GComponent foreground( GColor color );
-    public GColor foreground();
-    public GComponent background( GColor color );
-    public GColor background();
+
+    /**
+     * @param out Receives current foreground color.
+     * @return true if foreground color is defined, otherwise {@code out} will not be modified.
+     */
+    public boolean foreground( Vec4 out );
+
+    /**
+     * @param color Foreground color, or {@code null} for none.
+     * @return this
+     */
+    public GComponent setForeground( Vec4 color );
+
+    /**
+     * Sets foreground color.
+     *
+     * @return this
+     */
+    public GComponent setForeground( float red, float green, float blue, float alpha );
+
+    /**
+     * @param out Receives current foreground color.
+     * @return true if foreground color is defined, otherwise {@code out} will not be modified.
+     */
+    public boolean background( Vec4 out );
+
+    /**
+     * @param color Background color, or {@code null} for none.
+     * @return this
+     */
+    public GComponent setBackground( Vec4 color );
+
+    /**
+     * Sets background color.
+     *
+     * @return this
+     */
+    public GComponent setBackground( float red, float green, float blue, float alpha );
+
+
     public GComponent font( Font font );
     public Font font();
     

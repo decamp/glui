@@ -4,20 +4,16 @@ import java.awt.Font;
 import java.awt.event.*;
 import java.util.*;
 
-import static javax.media.opengl.GL.*;
-import javax.media.opengl.GL;
-
 import bits.glui.event.*;
-
+import bits.math3d.Vec;
+import bits.math3d.Vec4;
 
 /**
  * @author decamp
  */
 public class GPanel implements GComponent {
 
-    private static final GColor DEFAULT_FOREGROUND = GColor.WHITE;
-    private static final GColor DEFAULT_BACKGROUND = null;
-    private static final Font   DEFAULT_FONT       = new Font( "Verdana", Font.PLAIN, 12 );
+    private static final Font DEFAULT_FONT = new Font( "Verdana", Font.PLAIN, 12 );
 
     private GDispatcher mDispatcher = null;
     private GComponent  mParent     = null;
@@ -26,15 +22,19 @@ public class GPanel implements GComponent {
 
     private GLayout mLayout = null;
 
-    private int  mX              = 0;
-    private int  mY              = 0;
-    private int  mW              = 1;
-    private int  mH              = 1;
-    private Rect mAbsoluteBounds = Rect.fromBounds( 0, 0, 1, 1 );
+    private int  mX = 0;
+    private int  mY = 0;
+    private int  mW = 1;
+    private int  mH = 1;
 
-    private GColor mForeground = DEFAULT_FOREGROUND;
-    private GColor mBackground = DEFAULT_BACKGROUND;
-    private Font   mFont       = DEFAULT_FONT;
+    private final Rect mAbsoluteBounds = Rect.fromBounds( 0, 0, 1, 1 );
+    private boolean mHasAbsoluteBounds = false;
+
+    private boolean mHasForeground  = true;
+    private final Vec4 mForeground  = new Vec4( 1, 1, 1, 1 );
+    private boolean mHasBackground  = false;
+    private final Vec4  mBackground = new Vec4( 0, 0, 0, 0 );
+    private Font mFont              = DEFAULT_FONT;
 
     private boolean mDisplayed = false;
     private boolean mVisible   = true;
@@ -112,33 +112,52 @@ public class GPanel implements GComponent {
     
     
     @Override
-    public Rect bounds() {
-        return Rect.fromBounds( mX, mY, mW, mH );
+    public synchronized void bounds( Rect out ) {
+        out.x0 = mX;
+        out.y0 = mY;
+        out.x1 = mX + mW;
+        out.y1 = mY + mH;
+    }
+
+    @Override
+    public void absoluteBounds( Rect out ) {
+        synchronized( this ) {
+            if( mHasAbsoluteBounds ) {
+                out.set( mAbsoluteBounds );
+                return;
+            }
+        }
+
+        Rect rect = null;
+        GComponent parent = mParent;
+        if( parent != null ) {
+            rect = new Rect();
+            parent.absoluteBounds( rect );
+        }
+
+        synchronized( this ) {
+            Rect abs = mAbsoluteBounds;
+
+            if( rect != null ) {
+                abs.x0 = rect.x0 + mX;
+                abs.x1 = abs.x0 + mW;
+                abs.y0 = rect.y0 + mY;
+                abs.y1 = abs.y0 + mH;
+            } else {
+                abs.x0 = mX;
+                abs.y0 = mY;
+                abs.x1 = mX + mW;
+                abs.y1 = mY + mH;
+            }
+            out.set( abs );
+        }
     }
 
     @Override
     public Rect absoluteBounds() {
-        Rect ret = mAbsoluteBounds;
-        if( ret != null ) {
-            return ret;
-        }
-        
-        GComponent parent = mParent;
-        if( parent != null ) {
-            ret = parent.absoluteBounds();
-        }
-        
-        synchronized( this ) {
-            if( ret == null ) {
-                ret = Rect.fromBounds( mX, mY, mW, mH );
-            } else {
-                ret = Rect.fromBounds( ret.x() + mX, ret.y() + mY, mW, mH );
-            }
-            
-            mAbsoluteBounds = ret;
-        }
-        
-        return ret;
+        Rect rect = new Rect();
+        absoluteBounds( rect );
+        return rect;
     }
 
     @Override
@@ -186,12 +205,11 @@ public class GPanel implements GComponent {
             mY = y;
             mW = w;
             mH = h;
-            mAbsoluteBounds = null;
-            
+
+            mHasAbsoluteBounds = false;
             if( moved ) {
                 treeProcessAncestorMoved( this );
             }
-            
             if( resized ) {
                 treeProcessAncestorResized( this );
                 applyLayout();
@@ -256,25 +274,67 @@ public class GPanel implements GComponent {
     }
 
     @Override
-    public GPanel foreground( GColor foreground ) {
-        mForeground = foreground == null ? DEFAULT_FOREGROUND : foreground;
+    public synchronized GPanel setForeground( Vec4 color ) {
+        if( color != null ) {
+            Vec.put( color, mForeground );
+            mHasForeground = true;
+        } else {
+            mHasForeground = false;
+        }
         return this;
     }
 
     @Override
-    public GColor foreground() {
-        return mForeground;
-    }
-
-    @Override
-    public GPanel background( GColor background ) {
-        mBackground = background;
+    public synchronized GPanel setForeground( float r, float g, float b, float a ) {
+        mHasForeground = true;
+        mForeground.x = r;
+        mForeground.y = g;
+        mForeground.z = b;
+        mForeground.w = a;
         return this;
     }
 
     @Override
-    public GColor background() {
-        return mBackground;
+    public synchronized boolean foreground( Vec4 out ) {
+        if( mHasForeground ) {
+            if( out != null ) {
+                Vec.put( mForeground, out );
+            }
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public synchronized GPanel setBackground( Vec4 background ) {
+        if( background != null ) {
+            Vec.put( background, mBackground );
+            mHasBackground = true;
+        } else {
+            mHasBackground = false;
+        }
+        return this;
+    }
+
+    @Override
+    public synchronized GPanel setBackground( float r, float g, float b, float a ) {
+        mHasBackground = true;
+        mBackground.x = r;
+        mBackground.y = g;
+        mBackground.z = b;
+        mBackground.w = a;
+        return this;
+    }
+
+    @Override
+    public synchronized boolean background( Vec4 out ) {
+        if( mHasBackground ) {
+            if( out != null ) {
+                Vec.put( mBackground, out );
+            }
+            return true;
+        }
+        return false;
     }
 
     
@@ -550,12 +610,11 @@ public class GPanel implements GComponent {
         if( dispatcher == mDispatcher && parent == mParent ) {
             return;
         }
-
         GDispatcher out = dispatcher != null ? dispatcher : mDispatcher;
         mDispatcher     = dispatcher;
         mParent         = parent;
-        mAbsoluteBounds = null;
-        
+        mHasAbsoluteBounds = false;
+
         // Notify ancestor has changed.
         if( out != null && mAncestorCaster != null ) {
             GAncestorEvent e = new GAncestorEvent( this, GAncestorEvent.ANCESTOR_CHANGED, parent );
@@ -566,7 +625,7 @@ public class GPanel implements GComponent {
         mNeedsLayout = false;
         mNeedsPaint  = false;
         applyLayout();
-        
+
         if( mDisplayed ) {
             repaint();
         }
@@ -581,7 +640,7 @@ public class GPanel implements GComponent {
     
     @Override
     public synchronized void treeProcessAncestorMoved( GComponent source ) {
-        mAbsoluteBounds = null;
+        mHasAbsoluteBounds = false;
     
         if( mDispatcher != null ) {
             if( source == this ) {
@@ -604,7 +663,7 @@ public class GPanel implements GComponent {
     
     @Override
     public synchronized void treeProcessAncestorResized( GComponent source ) {
-        mAbsoluteBounds = null;
+        mHasAbsoluteBounds = false;
         
         if( mDispatcher != null ) {
             if( source == this ) {
@@ -841,28 +900,26 @@ public class GPanel implements GComponent {
         }
     }
 
-
+    //TODO: Rect rid of rect initialization
     protected void prepareView( GGraphics g, GComponent p ) {
-        GL gl = g.gl();
+        Rect b = new Rect();
+        p.absoluteBounds( b );
+        Rect viewport = g.mContextViewport;
 
-        Rect b = p.absoluteBounds();
-        Rect viewport = g.contextViewport();
-
-        int x = b.x() - viewport.x();
-        int y = b.y() - viewport.y();
+        int x = b.x0 - viewport.x0;
+        int y = b.y0 - viewport.y0;
         int w = b.width();
         int h = b.height();
 
-        gl.glMatrixMode( GL_PROJECTION );
-        gl.glLoadIdentity();
-        gl.glOrtho( 0, w, 0, h, -1, 1 );
-        gl.glMatrixMode( GL_MODELVIEW );
-        gl.glLoadIdentity();
+        g.mProj.setOrtho( 0, w, 0, h, -1, 1 );
+        g.mView.identity();
+        g.mViewport.set( x, y, w, h );
 
+        // TODO: Reimplement scissor test.
         // gl.glTranslated(b.minX(), b.minY(), 0.0);
         // gl.glViewport((int)b.minX(), (int)b.minY(), (int)b.spanX(),
         // (int)b.spanY());
-        gl.glViewport( x, y, w, h );
+        //gl.glViewport( x, y, w, h );
         // gl.glScissor(x, y, w, h);
     }
 
@@ -894,7 +951,6 @@ public class GPanel implements GComponent {
         }
         
         mDisplayed = displayed;
-        
         if( out != null ) {
             if( mComponentCaster != null ) {
                 int id = displayed ? GComponentEvent.COMPONENT_SHOWN : GComponentEvent.COMPONENT_HIDDEN;

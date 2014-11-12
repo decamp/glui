@@ -40,6 +40,7 @@ class EventProcessor implements GHumanInputController {
     private       GComponent        mRoot       = null;
 
 
+
     EventProcessor( Component awtOwner, GComponent owner ) {
         mAwtOwner = awtOwner;
         mOwner = owner;
@@ -677,8 +678,7 @@ class EventProcessor implements GHumanInputController {
 
 
     //TODO: I don't think anyone is using the setCount or restartSequence cruft,
-    // which was originally meant to deal with AWT issues that didn't actually
-    // exist.
+    // which was originally meant to deal with AWT issues that didn't actually exist.
     private static class ClickCounter {
         private long mMicros;
         private int mCount  = 0;
@@ -725,6 +725,7 @@ class EventProcessor implements GHumanInputController {
     private static class MouseController {
 
         private final ModifierState mMods;
+        private final Rect mWorkRect = new Rect();
 
         private GComponent mRoot;
         private GComponent mMouseLocation;
@@ -990,16 +991,18 @@ class EventProcessor implements GHumanInputController {
 
             GComponent prev  = mMouseLocation;
             GComponent focus = null;
+            Rect bounds = mWorkRect;
+
             if( prev != null ) {
-                Rect bounds = prev.absoluteBounds();
-                int relx = x - bounds.x();
-                int rely = y - bounds.y();
+                prev.absoluteBounds( bounds );
+                int relx = x - bounds.x0;
+                int rely = y - bounds.y0;
                 focus = prev.mouseFocusableComponentAt( relx, rely );
             } else {
                 GComponent comp = mRoot;
-                Rect bounds = comp.absoluteBounds();
-                int relx = x - bounds.x();
-                int rely = y - bounds.y();
+                comp.absoluteBounds( bounds );
+                int relx = x - bounds.x0;
+                int rely = y - bounds.y0;
                 focus = comp.mouseFocusableComponentAt( relx, rely );
             }
 
@@ -1024,7 +1027,8 @@ class EventProcessor implements GHumanInputController {
                                  int clickCount,
                                  boolean trigger )
         {
-            Rect rect = source.absoluteBounds();
+            Rect rect = mWorkRect;
+            source.absoluteBounds( rect );
             GMouseEvent e = new GMouseEvent( source,
                                              id,
                                              micros,
@@ -1041,7 +1045,8 @@ class EventProcessor implements GHumanInputController {
 
 
         private boolean processMotion( GComponent source, int id, long micros ) {
-            Rect rect = source.absoluteBounds();
+            Rect rect = mWorkRect;
+            source.absoluteBounds( mWorkRect );
             GMouseEvent e = new GMouseEvent( source,
                                              id,
                                              micros,
@@ -1062,7 +1067,8 @@ class EventProcessor implements GHumanInputController {
                                       int scrollAmount,
                                       int wheelRotation )
         {
-            Rect rect = source.absoluteBounds();
+            Rect rect = mWorkRect;
+            source.absoluteBounds( rect );
             GMouseWheelEvent e = new GMouseWheelEvent( source,
                                                        GMouseEvent.MOUSE_WHEEL,
                                                        micros,

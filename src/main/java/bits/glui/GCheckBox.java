@@ -35,54 +35,54 @@ public class GCheckBox extends GButton implements GSelectable {
         return mSelected;
     }
 
-
+    //TODO: Reimplement
     @Override
     public void paintComponent( GGraphics g ) {
-        final GL gl = g.mGl;
-        final int w = width();
-        final int h = height();
-
-        GColor background = background();
-        if( background != null ) {
-            background.apply( gl );
-            gl.glBegin( GL_QUADS );
-            gl.glVertex2i( 0, 0 );
-            gl.glVertex2i( w, 0 );
-            gl.glVertex2i( w, h );
-            gl.glVertex2i( 0, h );
-            gl.glEnd();
-        }
-
-        foreground().apply( gl );
-
-        final int margin = 2;
-        gl.glLineWidth( 1f );
-        gl.glBegin( GL_LINE_LOOP );
-        gl.glVertex2i( margin, margin );
-        gl.glVertex2i( h - margin, margin );
-        gl.glVertex2i( h - margin, h - margin );
-        gl.glVertex2i( margin, h - margin );
-        gl.glEnd();
-
-        if( mSelected ) {
-            gl.glBegin( GL_LINES );
-            gl.glVertex2i( margin * 2, margin * 2 );
-            gl.glVertex2i( h - margin * 2, h - margin * 2 );
-            gl.glVertex2i( margin * 2, h - margin * 2 );
-            gl.glVertex2i( h - margin * 2, margin * 2 );
-            gl.glEnd();
-        }
-
-        FontTexture tex = g.fontManager().getFontTexture( font(), GLContext.getCurrent() );
-        gl.glMatrixMode( GL_MODELVIEW );
-        gl.glPushMatrix();
-        gl.glTranslated( h, (int)(h - tex.getAscent() * 0.66f) / 2, 0 );
-        
-        tex.push( gl );
-        tex.renderChars( gl, text() );
-        tex.pop( gl );
-
-        gl.glPopMatrix();
+//        final GL gl = g.mGl;
+//        final int w = width();
+//        final int h = height();
+//
+//        GColor background = background();
+//        if( background != null ) {
+//            background.apply( gl );
+//            gl.glBegin( GL_QUADS );
+//            gl.glVertex2i( 0, 0 );
+//            gl.glVertex2i( w, 0 );
+//            gl.glVertex2i( w, h );
+//            gl.glVertex2i( 0, h );
+//            gl.glEnd();
+//        }
+//
+//        foreground().apply( gl );
+//
+//        final int margin = 2;
+//        gl.glLineWidth( 1f );
+//        gl.glBegin( GL_LINE_LOOP );
+//        gl.glVertex2i( margin, margin );
+//        gl.glVertex2i( h - margin, margin );
+//        gl.glVertex2i( h - margin, h - margin );
+//        gl.glVertex2i( margin, h - margin );
+//        gl.glEnd();
+//
+//        if( mSelected ) {
+//            gl.glBegin( GL_LINES );
+//            gl.glVertex2i( margin * 2, margin * 2 );
+//            gl.glVertex2i( h - margin * 2, h - margin * 2 );
+//            gl.glVertex2i( margin * 2, h - margin * 2 );
+//            gl.glVertex2i( h - margin * 2, margin * 2 );
+//            gl.glEnd();
+//        }
+//
+//        FontTexture tex = g.fontManager().getFontTexture( font(), GLContext.getCurrent() );
+//        gl.glMatrixMode( GL_MODELVIEW );
+//        gl.glPushMatrix();
+//        gl.glTranslated( h, (int)(h - tex.getAscent() * 0.66f) / 2, 0 );
+//
+//        tex.push( gl );
+//        tex.renderChars( gl, text() );
+//        tex.pop( gl );
+//
+//        gl.glPopMatrix();
     }
 
 
