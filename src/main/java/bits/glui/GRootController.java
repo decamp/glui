@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2014. Massachusetts Institute of Technology
+ * Released under the BSD 2-Clause License
+ * http://opensource.org/licenses/BSD-2-Clause
+ */
+
 package bits.glui;
 
 
@@ -6,6 +12,7 @@ import javax.media.opengl.*;
 import javax.media.opengl.awt.GLCanvas;
 
 import bits.draw3d.DrawEnv;
+import bits.draw3d.Rect;
 import bits.draw3d.text.FontManager;
 import bits.glui.util.*;
 import static javax.media.opengl.GL.*;

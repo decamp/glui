@@ -1,5 +1,5 @@
-### Title:
-OpenGL User Interface and rendering library.
+### GLUI
+OpenGL User Interface. Includes a windowing system based on Java Swing and several widgets.
 
 ### Build:
 $ ant
@@ -13,7 +13,7 @@ After build, add all jars in **lib** and **target** directories to your project.
 
 
 ### Known Issues:
-Components without MouseListeners should not receive mouse focus.
+First component sometimes receives mouse focus on initialization.
 
 ---
 Author: Philip DeCamp

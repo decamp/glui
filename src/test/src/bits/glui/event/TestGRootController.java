@@ -1,5 +1,12 @@
+/*
+ * Copyright (c) 2014. Massachusetts Institute of Technology
+ * Released under the BSD 2-Clause License
+ * http://opensource.org/licenses/BSD-2-Clause
+ */
+
 package bits.glui.event;
 
+import bits.draw3d.Rect;
 import bits.glui.*;
 import bits.math3d.Vec4;
 
@@ -21,7 +28,6 @@ public class TestGRootController {
         final GRootController root = GRootController.create();
         final Font font = new Font( "Verdana", Font.PLAIN, 18 );
         final Vec4 background = new Vec4( 0.2f, 0.2f, 0.3f, 1f );
-
 
         final GLabel label = new GLabel( "Test of the GLabel and FontTexture classes." );
         label.font( font );

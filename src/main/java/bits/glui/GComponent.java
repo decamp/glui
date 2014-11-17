@@ -1,9 +1,16 @@
+/*
+ * Copyright (c) 2014. Massachusetts Institute of Technology
+ * Released under the BSD 2-Clause License
+ * http://opensource.org/licenses/BSD-2-Clause
+ */
+
 package bits.glui;
 
 import java.awt.Font;
 import java.util.*;
 
 import bits.draw3d.DrawEnv;
+import bits.draw3d.Rect;
 import bits.glui.event.*;
 import bits.math3d.Vec4;
 

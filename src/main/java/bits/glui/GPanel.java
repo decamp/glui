@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2014. Massachusetts Institute of Technology
+ * Released under the BSD 2-Clause License
+ * http://opensource.org/licenses/BSD-2-Clause
+ */
+
 package bits.glui;
 
 import java.awt.Font;
@@ -5,6 +11,7 @@ import java.awt.event.*;
 import java.util.*;
 
 import bits.draw3d.DrawEnv;
+import bits.draw3d.Rect;
 import bits.glui.event.*;
 import bits.math3d.Vec;
 import bits.math3d.Vec4;
@@ -23,19 +30,19 @@ public class GPanel implements GComponent {
 
     private GLayout mLayout = null;
 
-    private int  mX = 0;
-    private int  mY = 0;
-    private int  mW = 1;
-    private int  mH = 1;
+    private int mX = 0;
+    private int mY = 0;
+    private int mW = 1;
+    private int mH = 1;
 
-    private final Rect mAbsoluteBounds = Rect.fromBounds( 0, 0, 1, 1 );
-    private boolean mHasAbsoluteBounds = false;
+    private final Rect    mAbsoluteBounds    = Rect.fromBounds( 0, 0, 1, 1 );
+    private       boolean mHasAbsoluteBounds = false;
 
-    private boolean mHasForeground  = true;
-    private final Vec4 mForeground  = new Vec4( 1, 1, 1, 1 );
-    private boolean mHasBackground  = false;
-    private final Vec4  mBackground = new Vec4( 0, 0, 0, 0 );
-    private Font mFont              = DEFAULT_FONT;
+    private       boolean mHasForeground = true;
+    private final Vec4    mForeground    = new Vec4( 1, 1, 1, 1 );
+    private       boolean mHasBackground = false;
+    private final Vec4    mBackground    = new Vec4( 0, 0, 0, 0 );
+    private       Font    mFont          = DEFAULT_FONT;
 
     private boolean mDisplayed = false;
     private boolean mVisible   = true;
