@@ -13,6 +13,7 @@ import javax.media.opengl.awt.GLCanvas;
 
 import bits.draw3d.DrawEnv;
 import bits.draw3d.Rect;
+import bits.draw3d.shader.ShaderManager;
 import bits.draw3d.text.FontManager;
 import bits.glui.util.*;
 import static javax.media.opengl.GL.*;
@@ -48,7 +49,7 @@ public final class GRootController {
     private final GLEventHandler   mHandler;
     private final GEventController mCont;
     private final InitNode         mInit;
-    private final DrawEnv          mGraphics;
+    private final DrawEnv          mDrawEnv;
 
     private Animator mAnimator = null;
 
@@ -58,16 +59,32 @@ public final class GRootController {
         mHandler = new GLEventHandler();
         mCont = new GEventController( mCanvas, null );
         mInit = new InitNode( mCanvas );
-        mGraphics = new DrawEnv();
+        mDrawEnv = new DrawEnv();
 
         mCanvas.addGLEventListener( mHandler );
         new AwtEventTranslator( mCanvas, mCont.humanInputController() );
     }
 
 
-    public FontManager fontManager() {
-        return mGraphics.mFontMan;
+    /**
+     * Note that if a frame is not being rendered, the DrawEnv may not be valid and changes
+     * to state may be overwritten. Try to avoid using this method, and to avoid caching
+     * DrawEnv objects.
+     */
+    public DrawEnv drawEnv() {
+        return mDrawEnv;
     }
+
+
+    public FontManager fontManager() {
+        return mDrawEnv.mFontMan;
+    }
+
+
+    public ShaderManager shaderManager() {
+        return mDrawEnv.mShaderMan;
+    }
+
 
 
     public Component component() {
@@ -187,10 +204,10 @@ public final class GRootController {
 
 
     public void generateUpdates( GLAutoDrawable gld, Rect optContextViewport ) {
-        mGraphics.init( gld, optContextViewport );
-        mInit.push( mGraphics );
-        mCont.processAll( mGraphics );
-        mInit.pop( mGraphics );
+        mDrawEnv.init( gld, optContextViewport );
+        mInit.push( mDrawEnv );
+        mCont.processAll( mDrawEnv );
+        mInit.pop( mDrawEnv );
     }
 
 
@@ -350,9 +367,9 @@ public final class GRootController {
         public void init( GLAutoDrawable gld ) {
             try {
                 GL gl = gld.getGL();
-                mGraphics.init( gld, null );
-                mInit.init( mGraphics );
-                mGraphics.checkErr();
+                mDrawEnv.init( gld, null );
+                mInit.init( mDrawEnv );
+                mDrawEnv.checkErr();
             } catch( Exception ex ) {
                 handle( ex );
             }
@@ -361,7 +378,7 @@ public final class GRootController {
         @Override
         public void dispose( GLAutoDrawable gld ) {
             //TODO: Complete disposal path?
-            mGraphics.dispose( gld );
+            mDrawEnv.dispose( gld );
         }
 
         public void reshape( GLAutoDrawable gld, int x, int y, int w, int h ) {
