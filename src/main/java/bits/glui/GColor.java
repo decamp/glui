@@ -11,13 +11,10 @@ import bits.math3d.Vec4;
 
 import java.awt.Color;
 
-import javax.media.opengl.*;
-import static javax.media.opengl.GL.*;
-
 /**
  * @author decamp
  */
-public class GColor extends Vec4 {
+@Deprecated public class GColor extends Vec4 {
 
     public static final GColor BLACK       = new GColor( 0f, 0f, 0f );
     public static final GColor BLUE        = new GColor( Color.BLUE );

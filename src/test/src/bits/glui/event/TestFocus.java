@@ -7,13 +7,10 @@
 package bits.glui.event;
 
 import javax.swing.JFrame;
-import javax.media.opengl.GL;
-import static javax.media.opengl.GL.*;
 
 import bits.draw3d.DrawEnv;
 import bits.draw3d.DrawStream;
 import bits.glui.*;
-
 
 /**
 * @author decamp

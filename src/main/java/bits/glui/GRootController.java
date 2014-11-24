@@ -11,11 +11,11 @@ import java.awt.Component;
 import javax.media.opengl.*;
 import javax.media.opengl.awt.GLCanvas;
 
-import bits.draw3d.DrawEnv;
-import bits.draw3d.Rect;
-import bits.draw3d.shader.ShaderManager;
+import bits.draw3d.*;
 import bits.draw3d.text.FontManager;
-import bits.glui.util.*;
+import bits.draw3d.util.Animator;
+import bits.draw3d.util.LimitAnimator;
+
 import static javax.media.opengl.GL.*;
 
 
@@ -84,7 +84,6 @@ public final class GRootController {
     public ShaderManager shaderManager() {
         return mDrawEnv.mShaderMan;
     }
-
 
 
     public Component component() {

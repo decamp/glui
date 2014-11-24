@@ -19,18 +19,9 @@ import bits.glui.event.*;
  */
 class EventProcessor implements GHumanInputController {
 
-
     private static final int ALL_BUTTONS_MASK = MouseEvent.BUTTON1_DOWN_MASK |
                                                 MouseEvent.BUTTON2_DOWN_MASK |
                                                 MouseEvent.BUTTON3_DOWN_MASK;
-
-    private static final int[] BUTTON_MASKS = { GMouseEvent.BUTTON1_DOWN_MASK,
-                                                GMouseEvent.BUTTON2_DOWN_MASK,
-                                                GMouseEvent.BUTTON3_DOWN_MASK };
-
-    private static final int[] BUTTON_IDS = { GMouseEvent.BUTTON1,
-                                              GMouseEvent.BUTTON2,
-                                              GMouseEvent.BUTTON3 };
 
     private static final long DOUBLE_CLICK_TIMEOUT = 500000L;
 

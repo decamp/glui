@@ -6,7 +6,9 @@
 
 package bits.glui.util;
 
-public interface Animator {
+
+// Use version in bits.draw3d.util
+@Deprecated public interface Animator {
     public void target( float fps );
     public void start();
     public void stop();

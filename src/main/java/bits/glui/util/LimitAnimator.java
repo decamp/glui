@@ -9,7 +9,8 @@ package bits.glui.util;
 import java.awt.Component;
 
 
-public class LimitAnimator implements Animator {
+// Use version in bits.draw3d.util
+@Deprecated public class LimitAnimator implements Animator {
 
     private final Component mTarget;
     private volatile long mMinMillisPerFrame = 0;
