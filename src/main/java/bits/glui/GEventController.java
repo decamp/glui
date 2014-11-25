@@ -74,11 +74,11 @@ public final class GEventController {
         g.mView.setOrtho( 0, bounds.width(), 0, bounds.height(), -1, 1 );
 
         g.mDepthTest.push();
-        g.mDepthTest.set( false, GL_LESS );
+        g.mDepthTest.apply( false, GL_LESS );
         g.mStencilTest.push();
-        g.mStencilTest.set( false );
+        g.mStencilTest.apply( false );
         g.mBlend.push();
-        g.mBlend.set( true, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
+        g.mBlend.apply( true, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
 
         int xx = bounds.x() - viewport.x();
         int yy = bounds.y() - viewport.y();
@@ -86,9 +86,9 @@ public final class GEventController {
         int hh = bounds.height();
 
         g.mScissorTest.push();
-        g.mScissorTest.set( true, xx, yy, ww, hh );
+        g.mScissorTest.apply( true, xx, yy, ww, hh );
         g.mViewport.push();
-        g.mViewport.set( xx, yy, ww, hh );
+        g.mViewport.apply( xx, yy, ww, hh );
 
         try {
             mRoot.processPaint( g );

@@ -6,10 +6,10 @@
 
 package bits.glui.event;
 
+import bits.draw3d.DrawEnv;
+
 import java.awt.event.*;
 import java.util.EventListener;
-
-import bits.draw3d.DrawEnv;
 
 
 /**

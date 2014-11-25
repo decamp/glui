@@ -124,7 +124,7 @@ public class GTextField extends GPanel {
         }
 
         s.color( v );
-        g.mLineWidth.set( 1f );
+        g.mLineWidth.apply( 1f );
         s.beginLineLoop();
         s.vert( 1, 1 );
         s.vert( w - 1, 1 );

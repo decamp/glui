@@ -921,8 +921,8 @@ public class GPanel implements GComponent {
 
         g.mProj.setOrtho( 0, w, 0, h, -1, 1 );
         g.mView.identity();
-        g.mViewport.set( x, y, w, h );
-        g.mScissorTest.set( true, x, y, w, h );
+        g.mViewport.apply( x, y, w, h );
+        g.mScissorTest.apply( true, x, y, w, h );
     }
 
 

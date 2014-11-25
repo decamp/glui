@@ -9,10 +9,10 @@ package bits.glui;
 import java.awt.event.*;
 import javax.media.opengl.*;
 
+import bits.math3d.*;
 import bits.draw3d.DrawStream;
 import bits.draw3d.DrawEnv;
 import bits.draw3d.text.FontTexture;
-import bits.math3d.Vec4;
 
 
 public class GCheckBox extends GButton implements GSelectable {
@@ -45,7 +45,7 @@ public class GCheckBox extends GButton implements GSelectable {
     @Override
     public void paintComponent( DrawEnv g ) {
         final DrawStream s = g.drawStream();
-        final Vec4 v = g.mWorkVec4;
+        final bits.math3d.Vec4 v = g.mWorkVec4;
         final int w = width();
         final int h = height();
         s.config( true, false, false );
@@ -65,7 +65,7 @@ public class GCheckBox extends GButton implements GSelectable {
         }
 
         foreground( v );
-        g.mLineWidth.set( 1f );
+        g.mLineWidth.apply( 1f );
         s.color( v );
         s.beginLineLoop();
         final int margin = 2;

@@ -309,17 +309,17 @@ public final class GRootController {
             g.mColorMat.identity();
             g.mTexMat.identity();
 
-            g.mBlend.set( true, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
-            g.mColorMask.set( true, true, true, true );
+            g.mBlend.apply( true, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
+            g.mColorMask.apply( true, true, true, true );
             g.mGl.glCullFace( GL_BACK );
             g.mGl.glFrontFace( GL_CCW );
-            g.mCullFace.set( false );
-            g.mDepthMask.set( true );
-            g.mDepthTest.set( true, GL_LESS );
-            g.mPolygonOffset.set( false );
-            g.mScissorTest.set( false );
-            g.mStencilTest.set( false, GL_ALWAYS, 0, 0xFFFFFFFF );
-            g.mStencilOp.set( GL_KEEP, GL_KEEP, GL_KEEP );
+            g.mCullFace.apply( false );
+            g.mDepthMask.apply( true );
+            g.mDepthTest.apply( true, GL_LESS );
+            g.mPolygonOffset.apply( false );
+            g.mScissorTest.apply( false );
+            g.mStencilTest.apply( false, GL_ALWAYS, 0, 0xFFFFFFFF );
+            g.mStencilOp.apply( GL_KEEP, GL_KEEP, GL_KEEP );
 
             g.mGl.glClear( mClearBits );
         }
