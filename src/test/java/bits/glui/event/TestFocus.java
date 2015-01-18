@@ -102,13 +102,13 @@ public class TestFocus {
 
             if( !mHasFocus ) {
                 s.color( 0.5f, 0.5f, 0.5f );
-                d.mLineWidth.set( 1f );
+                d.mLineWidth.apply( 1f );
             } else {
                 s.color( 1f, 1f, 1f );
-                d.mLineWidth.set( 3f );
+                d.mLineWidth.apply( 3f );
             }
 
-            d.mCullFace.set( true );
+            d.mCullFace.apply( true );
             s.beginLineLoop();
             s.vert( 0, 0 );
             s.vert( width(), 0 );
