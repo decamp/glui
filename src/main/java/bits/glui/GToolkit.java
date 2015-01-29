@@ -19,4 +19,17 @@ public class GToolkit {
         return comp.hasMouseListener() && comp.isEnabled() && comp.isDisplayed();
     }
 
+    public static boolean isChild( GComponent parent, GComponent comp ) {
+        if( parent == null ) {
+            return false;
+        }
+        while( comp != null ) {
+            if( comp == parent ) {
+                return true;
+            }
+            comp = comp.parent();
+        }
+        return false;
+    }
+
 }

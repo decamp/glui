@@ -13,6 +13,12 @@ import java.util.EventListener;
 
 
 /**
+ * Equivalent to {@link java.awt.AWTEventMulticaster}.
+ * Concurrent data structure for event dispatch.
+ * Has better runtime performance than AWTEventMulticaster,
+ * but worse performance when removing listeners.
+ * Does not make guarantees about order of elements.
+ *
  * @author decamp
  */
 public class GluiMulticaster implements ActionListener,
@@ -313,9 +319,9 @@ public class GluiMulticaster implements ActionListener,
             c = c.mNext;
         } while( c != null );
     }
-    
-    
-    
+
+
+
     private final GluiMulticaster mNext;
     private final EventListener mListener;
     

@@ -14,8 +14,8 @@ import static javax.media.opengl.GL.*;
 
 
 /**
- * Pretty much the lowest-level public interface for
- * direct event-driving. This can be used in place
+ * The lowest-level public interface available for
+ * firing events. This can be used in place
  * of GRootController if you want to setup your own
  * GLContext.
  *
@@ -25,13 +25,15 @@ public final class GEventController {
 
     private final GLayeredPanel  mRoot;
     private final EventQueue     mQueue;
+    private final GKeyboardFocusManager mFocusMan;
     private final EventProcessor mProcessor;
 
 
     public GEventController( Component optParent, GLayeredPanel optRootPane ) {
         mRoot      = optRootPane != null ? optRootPane : new GLayeredPanel();
         mQueue     = new EventQueue( mRoot, optParent );
-        mProcessor = new EventProcessor( optParent, mRoot );
+        mFocusMan  = new GKeyboardFocusManager( optRootPane, optParent );
+        mProcessor = new EventProcessor( optParent, mRoot, mFocusMan );
         mRoot.treeProcessParentChanged( mQueue, null );
     }
 
@@ -51,6 +53,11 @@ public final class GEventController {
      */
     public GHumanInputController humanInputController() {
         return mProcessor;
+    }
+
+
+    public GKeyboardFocusManager keyboardFocusManager() {
+        return mFocusMan;
     }
 
 

@@ -26,11 +26,11 @@ class EventProcessor implements GHumanInputController {
     private static final long DOUBLE_CLICK_TIMEOUT = 500000L;
 
 
-    private final Component  mAwtOwner;
-    private final GComponent mOwner;
+    private final Component             mAwtOwner;
+    private final GComponent            mOwner;
+    private final GKeyboardFocusManager mFocusMan;
 
     private final ModifierState   mMods;
-    private final FocusController mFocusCont;
     private final KeyController   mKeyCont;
     private final MouseController mMouseCont;
 
@@ -38,15 +38,14 @@ class EventProcessor implements GHumanInputController {
     private       GComponent        mRoot       = null;
 
 
-
-    EventProcessor( Component awtOwner, GComponent owner ) {
+    EventProcessor( Component awtOwner, GComponent owner, GKeyboardFocusManager focusMan ) {
         mAwtOwner = awtOwner;
         mOwner = owner;
         mRoot = owner;
+        mFocusMan = focusMan;
 
         mMods = new ModifierState();
-        mFocusCont = new FocusController( owner, awtOwner );
-        mKeyCont   = new KeyController( mFocusCont, mMods );
+        mKeyCont = new KeyController( owner, mFocusMan, mMods );
         mMouseCont = new MouseController( mMods, owner );
     }
     
@@ -54,7 +53,7 @@ class EventProcessor implements GHumanInputController {
     public void validate() {
         InputFrame revert = null;
 
-        while( !isChild( mOwner, mRoot ) && !mInputStack.isEmpty() ) {
+        while( !GToolkit.isChild( mOwner, mRoot ) && !mInputStack.isEmpty() ) {
             revert = mInputStack.pop();
             mRoot = revert.mRoot;
         }
@@ -63,7 +62,7 @@ class EventProcessor implements GHumanInputController {
             return;
         }
 
-        mFocusCont.setRoot( revert.mRoot, revert.mFocus );
+        mFocusMan.setRoot( revert.mRoot, revert.mFocus );
         mMouseCont.setRoot( revert.mRoot );
     }
 
@@ -81,30 +80,30 @@ class EventProcessor implements GHumanInputController {
 
 
     public void processRequestFocus( GComponent source ) {
-        mFocusCont.requestFocus( source );
+        mFocusMan.transferFocus( source );
     }
 
 
     public void processTransferFocusBackward( GComponent source ) {
-        mFocusCont.transferFocusBackward( source );
+        mFocusMan.transferFocusBackward( source );
     }
 
 
     public void processTransferFocusForward( GComponent source ) {
-        mFocusCont.transferFocusForward( source );
+        mFocusMan.transferFocusForward( source );
     }
 
 
     public void processPushInputRoot( GComponent source ) {
         GComponent root = mRoot;
-        if( source == null || source == root || !isChild( root, source ) ) {
+        if( source == null || source == root || !GToolkit.isChild( root, source ) ) {
             return;
         }
 
-        mInputStack.push( new InputFrame( root, mFocusCont.focus() ) );
+        mInputStack.push( new InputFrame( root, mFocusMan.focusOwner() ) );
         mRoot = source;
         mMouseCont.setRoot( source );
-        mFocusCont.setRoot( source, null );
+        mFocusMan.setRoot( source, null );
     }
 
 
@@ -133,19 +132,19 @@ class EventProcessor implements GHumanInputController {
             InputFrame frame = mInputStack.pop();
             mRoot = frame.mRoot;
             mMouseCont.setRoot( frame.mRoot );
-            mFocusCont.setRoot( frame.mRoot, frame.mFocus );
+            mFocusMan.setRoot( frame.mRoot, frame.mFocus );
         }
     }
 
 
     public void processPropertyChange( GComponent source, String prop, Object oldValue, Object newValue ) {
         if( prop == GComponent.PROP_DISPLAYED || prop == GComponent.PROP_ENABLED ) {
-            mFocusCont.validate( source );
+            mFocusMan.validate( source );
             mMouseCont.validate();
         } else if( prop == GComponent.PROP_HAS_MOUSE_LISTENER ) {
             mMouseCont.validate();
         } else if( prop == GComponent.PROP_HAS_KEY_LISTENER ) {
-            mFocusCont.validate(  source );
+            mFocusMan.validate( source );
         }
     }
 
@@ -238,22 +237,6 @@ class EventProcessor implements GHumanInputController {
     @Override
     public boolean mouseWheelMoved( int scrollType, int scrollAmount, int wheelRotation ) {
         return mMouseCont.mouseWheelMoved( scrollType, scrollAmount, wheelRotation );
-    }
-
-
-
-    private static boolean isChild( GComponent root, GComponent comp ) {
-        if( root == null )
-            return false;
-
-        while( comp != null ) {
-            if( comp == root )
-                return true;
-
-            comp = comp.parent();
-        }
-
-        return false;
     }
 
 
@@ -453,134 +436,15 @@ class EventProcessor implements GHumanInputController {
     }
 
 
-    private static class FocusController {
-
-        private final GFocusTraversalPolicy mPolicy;
-        private Component  mAwtRoot;
-        private GComponent mRoot;
-        private GComponent mFocus;
-
-
-        public FocusController( GComponent root, Component optAwtOwner ) {
-            mPolicy  = new GChildOrderTraversalPolicy();
-            mRoot    = root;
-            mAwtRoot = optAwtOwner;
-        }
-
-
-
-        public GComponent focus() {
-            return mFocus;
-        }
-
-
-        public void requestFocus( GComponent source ) {
-            if( mAwtRoot != null && !mAwtRoot.hasFocus() ) {
-                mAwtRoot.requestFocus();
-            }
-
-            GComponent focus = mFocus;
-            if( focus == source ) {
-                return;
-            }
-
-            if( source == null || isChild( mRoot, source ) ) {
-                updateFocus( source, source, false );
-            }
-        }
-
-
-        public void transferFocusBackward( GComponent source ) {
-            GComponent focus = mFocus;
-            GComponent root  = mRoot;
-
-            if( focus != source ) {
-                return;
-            }
-
-            GComponent target = mPolicy.getComponentBefore( root, focus );
-            if( target != focus ) {
-                updateFocus( source, target, false );
-            }
-        }
-
-
-        public void transferFocusForward( GComponent source ) {
-            GComponent focus = mFocus;
-            GComponent root  = mRoot;
-
-            if( focus != source ) {
-                return;
-            }
-
-            GComponent target = mPolicy.getComponentAfter( root, focus );
-            if( target != focus ) {
-                updateFocus( source, target, false );
-            }
-        }
-
-
-        public void validate( GComponent optSource ) {
-            GComponent root  = mRoot;
-            GComponent focus = mFocus;
-
-            if( focus == null || !GToolkit.isKeyboardFocusable( focus ) || !isChild( root, focus ) ) {
-                GComponent target = mRoot;
-                target = mPolicy.getDefaultComponent( target );
-                updateFocus( optSource, target, false );
-            }
-        }
-
-
-        public void setRoot( GComponent root, GComponent initFocus ) {
-            mRoot = root;
-            validate( mRoot );
-        }
-
-
-        public void setAwtOwner( Component root ) {
-            mAwtRoot = root;
-        }
-
-
-
-        private void updateFocus( GComponent optSource, GComponent target, boolean temporary ) {
-            GComponent prev = mFocus;
-            if( prev == target ) {
-                return;
-            }
-
-            if( optSource == null ) {
-                optSource = mRoot;
-            }
-
-            mFocus = target;
-
-            if( prev != null ) {
-                prev.processFocusEvent( new GFocusEvent( optSource, GFocusEvent.FOCUS_LOST, temporary, target ) );
-            }
-
-            if( target != null ) {
-                target.processFocusEvent( new GFocusEvent( optSource, GFocusEvent.FOCUS_GAINED, temporary, target ) );
-            }
-        }
-
-
-        private boolean process( GComponent source, GKeyEvent event ) {
-            source.processKeyEvent( event );
-            return event.isConsumed();
-        }
-
-    }
-
-
     private static class KeyController {
 
-        private final FocusController mFocusCont;
-        private final ModifierState   mMods;
+        private final GComponent mRoot;
+        private final GKeyboardFocusManager mFocusCont;
+        private final ModifierState mMods;
 
 
-        public KeyController( FocusController focusCont, ModifierState mods ) {
+        public KeyController( GComponent root, GKeyboardFocusManager focusCont, ModifierState mods ) {
+            mRoot = root;
             mFocusCont = focusCont;
             mMods = mods;
         }
@@ -588,88 +452,79 @@ class EventProcessor implements GHumanInputController {
 
         public boolean keyPressed( int keyCode, char keyChar, int keyLoc ) {
             int mods = mMods.pressKey( keyCode, keyLoc );
-            GComponent focus = mFocusCont.focus();
+            GComponent focus = mFocusCont.focusOwner();
             if( focus == null ) {
-                return false;
+                focus = mRoot;
             }
-
             long micros = System.currentTimeMillis() * 1000L;
             int id = GKeyEvent.KEY_PRESSED;
             GKeyEvent ev = new GKeyEvent( focus, id, micros, mods, keyCode, keyChar, keyLoc );
-            return process( focus, ev );
+            return mFocusCont.dispatchKeyEvent( ev );
         }
 
 
         public boolean keyPressed( long micros, int mods, int keyCode, char keyChar, int keyLoc ) {
             mMods.setKeyModifiers( mods );
-            GComponent focus = mFocusCont.focus();
+            GComponent focus = mFocusCont.focusOwner();
             if( focus == null ) {
-                return false;
+                focus = mRoot;
             }
-
             int id = GKeyEvent.KEY_PRESSED;
             GKeyEvent ev = new GKeyEvent( focus, id, micros, mods, keyCode, keyChar, keyLoc );
-            return process( focus, ev );
+            return mFocusCont.dispatchKeyEvent( ev );
         }
 
 
         public boolean keyReleased( int keyCode, char keyChar, int keyLoc ) {
             int mods = mMods.releaseKey( keyCode, keyLoc );
-            GComponent focus = mFocusCont.focus();
+            GComponent focus = mFocusCont.focusOwner();
             if( focus == null ) {
-                return false;
+                focus = mRoot;
             }
-
             long micros = System.currentTimeMillis() * 1000L;
             int id = GKeyEvent.KEY_RELEASED;
             GKeyEvent ev = new GKeyEvent( focus, id, micros, mods, keyCode, keyChar, keyLoc );
-            return process( focus, ev );
+            return mFocusCont.dispatchKeyEvent( ev );
         }
 
 
         public boolean keyReleased( long micros, int mods, int keyCode, char keyChar, int keyLoc ) {
             mMods.setKeyModifiers( mods );
-            GComponent focus = mFocusCont.focus();
+            GComponent focus = mFocusCont.focusOwner();
             if( focus == null ) {
-                return false;
+                focus = mRoot;
             }
 
             int id = GKeyEvent.KEY_RELEASED;
             GKeyEvent ev = new GKeyEvent( focus, id, micros, mods, keyCode, keyChar, keyLoc );
-            return process( focus, ev );
+            return mFocusCont.dispatchKeyEvent( ev );
         }
 
 
         public boolean keyTyped( int keyCode, char keyChar, int keyLoc ) {
             int mods = mMods.keyEventModifiers();
-            GComponent focus = mFocusCont.focus();
+            GComponent focus = mFocusCont.focusOwner();
             if( focus == null ) {
-                return false;
+                focus = mRoot;
             }
 
             long micros = System.currentTimeMillis() * 1000L;
             int id = GKeyEvent.KEY_TYPED;
             GKeyEvent ev = new GKeyEvent( focus, id, micros, mods, keyCode, keyChar, keyLoc );
-            return process( focus, ev );
+            return mFocusCont.dispatchKeyEvent( ev );
         }
 
 
         public boolean keyTyped( long micros, int mods, int keyCode, char keyChar, int keyLoc ) {
             mMods.setKeyModifiers( mods );
-            GComponent focus = mFocusCont.focus();
+            GComponent focus = mFocusCont.focusOwner();
             if( focus == null ) {
-                return false;
+                focus = mRoot;
             }
 
             int id = GKeyEvent.KEY_TYPED;
             GKeyEvent ev = new GKeyEvent( focus, id, micros, mods, keyCode, keyChar, keyLoc );
-            return process( focus, ev );
-        }
-
-
-        private boolean process( GComponent source, GKeyEvent event ) {
-            source.processKeyEvent( event );
-            return event.isConsumed();
+            return mFocusCont.dispatchKeyEvent( ev );
         }
 
     }
@@ -903,15 +758,14 @@ class EventProcessor implements GHumanInputController {
         }
 
         /**
-         * Checks that components in focus are still valid. Should be called on property changes. Is called automatically
+         * Checks that components in transferFocus are still valid. Should be called on property changes. Is called automatically
          * by {@code setRoot()}.
          */
         public void validate() {
             GComponent root = mRoot;
-            GComponent loc = mMouseLocation;
             GComponent focus = mButtonFocus;
 
-            if( focus != null && (!GToolkit.isMouseFocusable( focus ) || !isChild( root, focus )) ) {
+            if( focus != null && (!GToolkit.isMouseFocusable( focus ) || !GToolkit.isChild( root, focus )) ) {
                 forceRelease();
                 mButtonFocus = null;
                 mClickFocusX = Integer.MIN_VALUE;

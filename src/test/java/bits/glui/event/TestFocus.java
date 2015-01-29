@@ -173,7 +173,7 @@ public class TestFocus {
 
 
         public void focusGained( GFocusEvent e ) {
-            System.out.println( "Has focus: " + mIndex );
+            System.out.println( "Has transferFocus: " + mIndex );
             mHasFocus = true;
         }
 
