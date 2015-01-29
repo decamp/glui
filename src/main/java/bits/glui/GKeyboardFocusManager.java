@@ -116,7 +116,9 @@ public class GKeyboardFocusManager implements GKeyEventDispatcher {
 
         if( focus == null || !GToolkit.isKeyboardFocusable( focus ) || !GToolkit.isChild( root, focus ) ) {
             GComponent target = mRoot;
-            target = mPolicy.getDefaultComponent( target );
+            if( target != null ) {
+                target = mPolicy.getDefaultComponent( target );
+            }
             updateFocus( optSource, target, false );
         }
     }
