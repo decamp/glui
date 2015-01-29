@@ -9,7 +9,6 @@ package bits.glui;
 import java.awt.event.*;
 import javax.media.opengl.*;
 
-import bits.math3d.*;
 import bits.draw3d.DrawStream;
 import bits.draw3d.DrawEnv;
 import bits.draw3d.text.FontTexture;
@@ -50,7 +49,7 @@ public class GCheckBox extends GButton implements GSelectable {
         final int h = height();
         s.config( true, false, false );
 
-        if( background( v ) ) {
+        if( getBackground( v ) ) {
             s.beginTriStrip();
             s.color( v );
             s.tex( 0, 0 );
@@ -64,7 +63,7 @@ public class GCheckBox extends GButton implements GSelectable {
             s.end();
         }
 
-        foreground( v );
+        getForeground( v );
         g.mLineWidth.apply( 1f );
         s.color( v );
         s.beginLineLoop();
@@ -85,7 +84,7 @@ public class GCheckBox extends GButton implements GSelectable {
             s.end();
         }
 
-        FontTexture font = g.fontManager().getFontTexture( font(), GLContext.getCurrent() );
+        FontTexture font = g.fontManager().getFontTexture( getFont(), GLContext.getCurrent() );
         font.bind( g );
         float yy = Math.round( ( h - ( font.getAscent() - font.getDescent() ) ) * 0.5f );
         font.renderChars( g, h, yy, 0, text() );

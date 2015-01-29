@@ -74,7 +74,7 @@ public final class GEventController {
 
     public void processPaint( DrawEnv g ) {
         Rect bounds   = new Rect();
-        mRoot.absoluteBounds( bounds );
+        mRoot.getAbsoluteBounds( bounds );
         Rect viewport = g.mContextViewport;
 
         Mat.identity( g.mProj.get() );

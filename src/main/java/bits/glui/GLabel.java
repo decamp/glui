@@ -63,8 +63,8 @@ public class GLabel extends GPanel {
     }
 
     @Override
-    public GLabel font( Font font ) {
-        super.font( font );
+    public GLabel setFont( Font font ) {
+        super.setFont( font );
         mUpdateLabel = true;
         return this;
     }
@@ -77,7 +77,7 @@ public class GLabel extends GPanel {
         int h = height();
         Vec4 v = g.mWorkVec4;
 
-        if( background( v ) ) {
+        if( getBackground( v ) ) {
             s.config( true, false, false );
             s.beginTriStrip();
             s.color( v );
@@ -93,7 +93,7 @@ public class GLabel extends GPanel {
         }
 
         String txt = text();
-        FontTexture font = g.mFontMan.getFontTexture( font() );
+        FontTexture font = g.mFontMan.getFontTexture( getFont() );
         if( mUpdateLabel ) {
             if( txt == null || txt.isEmpty() ) {
                 return;
@@ -103,7 +103,7 @@ public class GLabel extends GPanel {
             mLabelY = ( font.getAscent() - font.getDescent() ) * mVertDst;
         }
 
-        foreground( v );
+        getForeground( v );
         s.color( v );
 
         float x = Math.round( w * mHorSrc - mLabelX );

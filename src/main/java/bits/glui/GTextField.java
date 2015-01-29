@@ -84,7 +84,7 @@ public class GTextField extends GPanel {
         final Vec4 v = g.mWorkVec4;
 
         s.config( true, false, false );
-        if( background( v ) ) {
+        if( getBackground( v ) ) {
             s.color( v );
             s.beginQuads();
             s.vert( 0, 0 );
@@ -94,9 +94,9 @@ public class GTextField extends GPanel {
             s.end();
         }
 
-        foreground( v );
+        getForeground( v );
         s.color( v );
-        FontTexture font = g.fontManager().getFontTexture( font(), GLContext.getCurrent() );
+        FontTexture font = g.fontManager().getFontTexture( getFont(), GLContext.getCurrent() );
 
         float yy = Math.round( 0.5f * ( h - font.getAscent() + font.getDescent() ) );
         font.bind( g );
@@ -111,7 +111,7 @@ public class GTextField extends GPanel {
 
         font.unbind( g );
         s.config( true, false, false );
-        foreground( v );
+        getForeground( v );
 
         if( mHasFocus ) {
             s.color( v.x, v.y, v.z, 0.3f );

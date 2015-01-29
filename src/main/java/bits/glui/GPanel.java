@@ -120,7 +120,7 @@ public class GPanel implements GComponent {
     
     
     @Override
-    public synchronized void bounds( Rect out ) {
+    public synchronized void getBounds( Rect out ) {
         out.x0 = mX;
         out.y0 = mY;
         out.x1 = mX + mW;
@@ -128,7 +128,7 @@ public class GPanel implements GComponent {
     }
 
     @Override
-    public void absoluteBounds( Rect out ) {
+    public void getAbsoluteBounds( Rect out ) {
         synchronized( this ) {
             if( mHasAbsoluteBounds ) {
                 out.set( mAbsoluteBounds );
@@ -140,7 +140,7 @@ public class GPanel implements GComponent {
         GComponent parent = mParent;
         if( parent != null ) {
             rect = new Rect();
-            parent.absoluteBounds( rect );
+            parent.getAbsoluteBounds( rect );
         }
 
         synchronized( this ) {
@@ -162,9 +162,9 @@ public class GPanel implements GComponent {
     }
 
     @Override
-    public Rect absoluteBounds() {
+    public Rect getAbsoluteBounds() {
         Rect rect = new Rect();
-        absoluteBounds( rect );
+        getAbsoluteBounds( rect );
         return rect;
     }
 
@@ -194,17 +194,17 @@ public class GPanel implements GComponent {
     }
     
     @Override
-    public GComponent position( int x, int y ) {
+    public GComponent setPosition( int x, int y ) {
         return bounds( x, y, width(), height() );
     }
     
     @Override
-    public GComponent size( int w, int h ) {
+    public GComponent setSize( int w, int h ) {
         return bounds( x(), y(), w, h );
     }
     
     @Override
-    public synchronized GComponent bounds( int x, int y, int w, int h ) {
+    public synchronized GComponent setBounds( int x, int y, int w, int h ) {
         boolean moved   = x != mX || y != mY;
         boolean resized = w != mW || h != mH;
         
@@ -271,13 +271,13 @@ public class GPanel implements GComponent {
     
     
     @Override
-    public GPanel font( Font font ) {
+    public GPanel setFont( Font font ) {
         mFont = font == null ? DEFAULT_FONT : font;
         return this;
     }
 
     @Override
-    public Font font() {
+    public Font getFont() {
         return mFont;
     }
 
@@ -303,7 +303,7 @@ public class GPanel implements GComponent {
     }
 
     @Override
-    public synchronized boolean foreground( Vec4 out ) {
+    public synchronized boolean getForeground( Vec4 out ) {
         if( mHasForeground ) {
             if( out != null ) {
                 Vec.put( mForeground, out );
@@ -335,7 +335,7 @@ public class GPanel implements GComponent {
     }
 
     @Override
-    public synchronized boolean background( Vec4 out ) {
+    public synchronized boolean getBackground( Vec4 out ) {
         if( mHasBackground ) {
             if( out != null ) {
                 Vec.put( mBackground, out );
@@ -885,8 +885,8 @@ public class GPanel implements GComponent {
 
         e.consume();
     }
-    
-    
+
+
     protected void paintComponent( DrawEnv g ) {
         GPaintListener c = mPaintCaster;
         if( c != null ) {
@@ -911,7 +911,7 @@ public class GPanel implements GComponent {
 
     protected void prepareView( DrawEnv g, GComponent p ) {
         Rect b = g.mWorkRect;
-        p.absoluteBounds( b );
+        p.getAbsoluteBounds( b );
         Rect viewport = g.mContextViewport;
 
         int x = b.x0 - viewport.x0;
@@ -964,5 +964,61 @@ public class GPanel implements GComponent {
         
         return true;
     }
-        
+
+
+
+    //**********************
+    // Deprecation Ghetto
+    //**********************
+
+    @Override
+    @Deprecated public void bounds( Rect out ) {
+        getBounds( out );
+    }
+
+    @Override
+    @Deprecated public void absoluteBounds( Rect out ) {
+        getAbsoluteBounds( out );
+    }
+
+    @Override
+    @Deprecated public Rect absoluteBounds() {
+        return getAbsoluteBounds();
+    }
+
+    @Override
+    @Deprecated public GComponent position( int x, int y ) {
+        return setPosition( x, y );
+    }
+
+    @Override
+    @Deprecated public GComponent bounds( int x, int y, int w, int h ) {
+        return setBounds( x, y, w, h );
+    }
+
+    @Override
+    @Deprecated public GComponent size( int w, int y ) {
+        return setSize( w, y );
+    }
+
+    @Override
+    @Deprecated public boolean background( Vec4 out ) {
+        return getBackground( out );
+    }
+
+    @Override
+    @Deprecated public boolean foreground( Vec4 out ) {
+        return getForeground( out );
+    }
+
+    @Override
+    @Deprecated public GComponent font( Font font ) {
+        return setFont( font );
+    }
+
+    @Override
+    @Deprecated public Font font() {
+        return getFont();
+    }
+
 }

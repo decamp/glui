@@ -7,16 +7,13 @@
 package bits.glui;
 
 import java.awt.event.ActionEvent;
-
 import javax.swing.AbstractAction;
 import javax.swing.Icon;
-
 
 /**
  * @author decamp
  */
 public class GToggleAction extends AbstractAction implements GSelectable {
-
 
     public GToggleAction( boolean selected ) {
         super();

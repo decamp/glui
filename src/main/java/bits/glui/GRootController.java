@@ -363,9 +363,9 @@ public final class GRootController {
 
         private ErrorCallback mErr = null;
 
+        @Override
         public void init( GLAutoDrawable gld ) {
             try {
-                GL gl = gld.getGL();
                 mDrawEnv.init( gld, null );
                 mInit.init( mDrawEnv );
                 mDrawEnv.checkErr();
@@ -380,15 +380,17 @@ public final class GRootController {
             mDrawEnv.dispose( gld );
         }
 
+        @Override
         public void reshape( GLAutoDrawable gld, int x, int y, int w, int h ) {
             try {
                 mInit.reshape( gld, x, y, w, h );
-                mCont.pane().bounds( x, y, w, h );
+                mCont.pane().setBounds( x, y, w, h );
             } catch( Exception ex ) {
                 handle( ex );
             }
         }
 
+        @Override
         public void display( GLAutoDrawable gld ) {
             try {
                 generateUpdates( gld );
@@ -397,11 +399,11 @@ public final class GRootController {
             }
         }
 
-        public void displayChanged( GLAutoDrawable gld, boolean arg1, boolean arg2 ) {}
 
         synchronized void setErrorCallback( ErrorCallback err ) {
             mErr = err;
         }
+
 
         private void handle( Exception ex ) {
             if( mErr != null ) {
@@ -414,6 +416,5 @@ public final class GRootController {
         }
 
     }
-
 
 }

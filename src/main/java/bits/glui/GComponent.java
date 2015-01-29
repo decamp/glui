@@ -31,28 +31,28 @@ public interface GComponent {
     public void removeChild( GComponent pane );
     public void clearChildren();
 
-    public void bounds( Rect out );
+    public void getBounds( Rect out );
     /**
      * Retrieves the absolute bounds of a component, or the bounds within the frame.
      * If the component is not installed, it's relative bounds will be reported is its absolute bounds.
      *
      * @param out Receives absolute bounds of component.
      */
-    public void absoluteBounds( Rect out );
-    public Rect absoluteBounds();
+    public void getAbsoluteBounds( Rect out );
+    public Rect getAbsoluteBounds();
     public int x();
     public int y();
     public int width();
     public int height();
     public boolean contains( int x, int y );
-    public GComponent position( int x, int y );
-    public GComponent bounds( int x, int y, int w, int h );
-    public GComponent size( int w, int y );
+    public GComponent setPosition( int x, int y );
+    public GComponent setBounds( int x, int y, int w, int h );
+    public GComponent setSize( int w, int y );
     public void setVisible( boolean visible );
     public boolean isVisible();
     public void setEnabled( boolean enable );
     public boolean isEnabled();
-    
+
     /**
      * @return true iff these conditions are all true: <br/>
      *        This component has been placed in a component hierarchy with valid pane.
@@ -65,7 +65,7 @@ public interface GComponent {
      * @param out Receives current foreground color.
      * @return true if foreground color is defined, otherwise {@code out} will not be modified.
      */
-    public boolean foreground( Vec4 out );
+    public boolean getForeground( Vec4 out );
 
     /**
      * @param color Foreground color, or {@code null} for none.
@@ -84,7 +84,7 @@ public interface GComponent {
      * @param out Receives current foreground color.
      * @return true if foreground color is defined, otherwise {@code out} will not be modified.
      */
-    public boolean background( Vec4 out );
+    public boolean getBackground( Vec4 out );
 
     /**
      * @param color Background color, or {@code null} for none.
@@ -99,10 +99,9 @@ public interface GComponent {
      */
     public GComponent setBackground( float red, float green, float blue, float alpha );
 
+    public GComponent setFont( Font font );
+    public Font getFont();
 
-    public GComponent font( Font font );
-    public Font font();
-    
     public void addComponentListener( GComponentListener listener );
     public void removeComponentListener( GComponentListener listener );
     public void addAncestorListener( GAncestorListener listener );
@@ -164,5 +163,17 @@ public interface GComponent {
     public void processMouseMotionEvent( GMouseEvent e );
     public void processMouseWheelEvent( GMouseWheelEvent e );
     public void processKeyEvent( GKeyEvent e );
-    
+
+
+    @Deprecated public void bounds( Rect out );
+    @Deprecated public void absoluteBounds( Rect out );
+    @Deprecated public Rect absoluteBounds();
+    @Deprecated public GComponent position( int x, int y );
+    @Deprecated public GComponent bounds( int x, int y, int w, int h );
+    @Deprecated public GComponent size( int w, int y );
+    @Deprecated public boolean background( Vec4 out );
+    @Deprecated public boolean foreground( Vec4 out );
+    @Deprecated public GComponent font( Font font );
+    @Deprecated public Font font();
+
 }

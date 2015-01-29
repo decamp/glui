@@ -613,7 +613,6 @@ class EventProcessor implements GHumanInputController {
             if( source == null ) {
                 return false;
             }
-
             return process( source, GMouseEvent.MOUSE_PRESSED, micros, button, clickCount, trigger );
         }
 
@@ -672,7 +671,6 @@ class EventProcessor implements GHumanInputController {
             if( prev == null ) {
                 return false;
             }
-
             return process( prev, GMouseEvent.MOUSE_EXITED, System.currentTimeMillis() * 1000L, 0, 0, false );
         }
 
@@ -833,13 +831,13 @@ class EventProcessor implements GHumanInputController {
             Rect bounds = mWorkRect;
 
             if( prev != null ) {
-                prev.absoluteBounds( bounds );
+                prev.getAbsoluteBounds( bounds );
                 int relx = x - bounds.x0;
                 int rely = y - bounds.y0;
                 focus = prev.mouseFocusableComponentAt( relx, rely );
             } else {
                 GComponent comp = mRoot;
-                comp.absoluteBounds( bounds );
+                comp.getAbsoluteBounds( bounds );
                 int relx = x - bounds.x0;
                 int rely = y - bounds.y0;
                 focus = comp.mouseFocusableComponentAt( relx, rely );
@@ -867,7 +865,7 @@ class EventProcessor implements GHumanInputController {
                                  boolean trigger )
         {
             Rect rect = mWorkRect;
-            source.absoluteBounds( rect );
+            source.getAbsoluteBounds( rect );
             GMouseEvent e = new GMouseEvent( source,
                                              id,
                                              micros,
@@ -885,7 +883,7 @@ class EventProcessor implements GHumanInputController {
 
         private boolean processMotion( GComponent source, int id, long micros ) {
             Rect rect = mWorkRect;
-            source.absoluteBounds( mWorkRect );
+            source.getAbsoluteBounds( mWorkRect );
             GMouseEvent e = new GMouseEvent( source,
                                              id,
                                              micros,
@@ -907,7 +905,7 @@ class EventProcessor implements GHumanInputController {
                                       int wheelRotation )
         {
             Rect rect = mWorkRect;
-            source.absoluteBounds( rect );
+            source.getAbsoluteBounds( rect );
             GMouseWheelEvent e = new GMouseWheelEvent( source,
                                                        GMouseEvent.MOUSE_WHEEL,
                                                        micros,
