@@ -14,38 +14,34 @@ import java.util.*;
  */
 public class GChildOrderTraversalPolicy implements GFocusTraversalPolicy {
 
-
     public GComponent getFirstComponent( GComponent root ) {
-        if( GToolkit.isKeyboardFocusable( root ) )
+        if( GToolkit.isKeyboardFocusable( root ) ) {
             return root;
-
+        }
         for( GComponent c : root.children() ) {
             GComponent ret = getFirstComponent( c );
             if( ret != null ) {
                 return ret;
             }
         }
-
         return null;
     }
 
 
     public GComponent getLastComponent( GComponent root ) {
         List<GComponent> children = root.children();
-
         for( int i = children.size() - 1; i >= 0; i-- ) {
             GComponent ret = getLastComponent( children.get( i ) );
             if( ret != null ) {
                 return ret;
             }
         }
-
         return GToolkit.isKeyboardFocusable( root ) ? root : null;
     }
 
 
     public GComponent getDefaultComponent( GComponent root ) {
-        return null;
+        return getFirstComponent( root );
     }
 
 
@@ -171,6 +167,5 @@ public class GChildOrderTraversalPolicy implements GFocusTraversalPolicy {
             comp = parent;
         }
     }
-
 
 }
