@@ -575,8 +575,8 @@ class EventProcessor implements GHumanInputController {
         private int mClickFocusX = Integer.MIN_VALUE;
         private int mClickFocusY = Integer.MIN_VALUE;
 
-        private int mMouseX;
-        private int mMouseY;
+        private int mMouseX = Integer.MIN_VALUE;
+        private int mMouseY = Integer.MIN_VALUE;
 
         private final ClickCounter mClicker = new ClickCounter();
 

@@ -52,8 +52,13 @@ public class GSelectGroup {
             mSelected = null;
         }
     }
-    
-    
+
+
+    public GSelectable getSelected() {
+        return mSelected;
+    }
+
+
     public void setSelected( GSelectable item, boolean select ) {
         if( item == mSelected ) {
             if( item != null && !select ) {
@@ -78,7 +83,7 @@ public class GSelectGroup {
     public boolean isSelected( Object obj ) {
         return obj == mSelected;
     }
-    
+
     
     public int size() {
         return mItems.size();
