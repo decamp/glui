@@ -32,7 +32,7 @@ public final class GEventController {
     public GEventController( Component optParent, GLayeredPanel optRootPane ) {
         mRoot      = optRootPane != null ? optRootPane : new GLayeredPanel();
         mQueue     = new EventQueue( mRoot, optParent );
-        mFocusMan  = new GKeyboardFocusManager( optRootPane, optParent );
+        mFocusMan  = new GKeyboardFocusManager( mRoot, optParent );
         mProcessor = new EventProcessor( optParent, mRoot, mFocusMan );
         mRoot.treeProcessParentChanged( mQueue, null );
     }
