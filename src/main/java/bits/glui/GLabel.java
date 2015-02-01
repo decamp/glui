@@ -27,7 +27,10 @@ public class GLabel extends GPanel {
     private boolean mUpdateLabel = true;
     private float mLabelX = 0f;
     private float mLabelY = 0f;
-    
+
+    final Vec4 mWorkFore = new Vec4();
+    final Vec4 mWorkBack = new Vec4();
+
     
     public GLabel( String text ) {
         mText = text;
@@ -47,17 +50,17 @@ public class GLabel extends GPanel {
     }
 
     
-    public GLabel horizontalAlignment( float backgroundPoint, float foregroundPoint ) {
-        mHorSrc = backgroundPoint;
-        mHorDst = foregroundPoint;
+    public GLabel horizontalAlignment( float foregroundPoint, float backgroundPoint ) {
+        mHorSrc = foregroundPoint;
+        mHorDst = backgroundPoint;
         mUpdateLabel = true;
         return this;
     }
 
     
-    public GLabel verticalAlignment( float backgroundPoint, float foregroundPoint ) {
-        mVertSrc = backgroundPoint;
-        mVertDst = foregroundPoint;
+    public GLabel verticalAlignment( float foregroundPoint, float backgroundPoint ) {
+        mVertSrc = foregroundPoint;
+        mVertDst = backgroundPoint;
         mUpdateLabel = true;
         return this;
     }
@@ -70,48 +73,53 @@ public class GLabel extends GPanel {
     }
 
     @Override
-    public void paintComponent( DrawEnv g ) {
-        DrawStream s = g.drawStream();
+    public void paintComponent( DrawEnv d ) {
+        getForeground( mWorkFore );
+        getBackground( mWorkBack );
+        paintLabel( d, mWorkBack, mWorkFore, 0, 0 );
+    }
+
+
+    protected void paintLabel( DrawEnv d, Vec4 background, Vec4 foreground, int offX, int offY ) {
+        DrawStream s = d.drawStream();
+        s.config( true, false, false );
 
         int w = width();
         int h = height();
-        Vec4 v = g.mWorkVec4;
 
-        if( getBackground( v ) ) {
+        if( background != null ) {
             s.config( true, false, false );
             s.beginTriStrip();
-            s.color( v );
-            s.tex( 0, 0 );
+            s.color( background );
             s.vert( 0, 0 );
-            s.tex( 1, 0 );
             s.vert( w, 0 );
-            s.tex( 0, 1 );
             s.vert( 0, h );
-            s.tex( 1, 1 );
             s.vert( w, h );
             s.end();
         }
 
-        String txt = text();
-        FontTexture font = g.mFontMan.getFontTexture( getFont() );
+        if( foreground == null ) {
+            return;
+        }
+
+        String text = text();
+        FontTexture font = d.fontManager().getFontTexture( getFont() );
+
         if( mUpdateLabel ) {
-            if( txt == null || txt.isEmpty() ) {
+            if( s == null || text.isEmpty() ) {
                 return;
             }
             mUpdateLabel = false;
-            mLabelX = font.getCharsWidth( txt ) * mHorDst;
-            mLabelY = ( font.getAscent() - font.getDescent() ) * mVertDst;
+            mLabelX = font.getCharsWidth( text ) * mHorSrc;
+            mLabelY = ( font.getAscent() + font.getDescent() ) * mVertSrc - font.getDescent();
         }
 
-        getForeground( v );
-        s.color( v );
-
-        float x = Math.round( w * mHorSrc - mLabelX );
-        float y = Math.round( h * mVertSrc - mLabelY );
-
-        font.bind( g );
-        font.renderChars( g, x, y, 0, txt );
-        font.unbind( g );
+        s.color( foreground );
+        float x = Math.round( w * mHorDst - mLabelX )  + offX;
+        float y = Math.round( h * mVertDst - mLabelY ) + offY;
+        font.bind( d );
+        font.renderChars( d, x, y, 0, text );
+        font.unbind( d );
     }
 
 }

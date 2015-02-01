@@ -108,7 +108,7 @@ public class TestFocus {
                 d.mLineWidth.apply( 3f );
             }
 
-            d.mCullFace.apply( true );
+            d.mCullFace.apply( false );
             s.beginLineLoop();
             s.vert( 0, 0 );
             s.vert( width(), 0 );
@@ -134,7 +134,6 @@ public class TestFocus {
 
             } else if( e.getButton() == 3 ) {
                 mMouse3Down = true;
-
                 if( (e.getModifiers() & GMouseEvent.META_DOWN_MASK) != 0 ) {
                     if( (e.getModifiers() & GMouseEvent.SHIFT_DOWN_MASK) == 0 ) {
                         System.out.println( "Start modal: " + mIndex );

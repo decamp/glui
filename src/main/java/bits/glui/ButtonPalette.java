@@ -3,6 +3,10 @@ package bits.glui;
 import bits.math3d.Vec;
 import bits.math3d.Vec4;
 
+import java.util.ArrayList;
+import java.util.List;
+
+
 public class ButtonPalette {
 
     public static final ButtonPalette DEFAULT = new ButtonPalette();
@@ -22,22 +26,19 @@ public class ButtonPalette {
     public ButtonPalette() {}
 
 
-    public void scaleAlpha( float scale ) {
-        scaleAlpha( mBackground, scale );
-        scaleAlpha( mForeground,         scale );
-        scaleAlpha( mRolloverBackground, scale );
-        scaleAlpha( mRolloverForeground, scale );
-        scaleAlpha( mPressedBackground,  scale );
-        scaleAlpha( mPressedForeground,  scale );
-        scaleAlpha( mSelectedBackground, scale );
-        scaleAlpha( mSelectedForeground, scale );
-        scaleAlpha( mDisabledBackground, scale );
-        scaleAlpha( mDisabledForeground, scale );
-    }
-
-
-    private static void scaleAlpha( Vec4 color, float scale ) {
-        color.w = Math.max( 0, Math.min( 1, scale * color.w ) );
+    public List<Vec4> listColors() {
+        ArrayList<Vec4> ret = new ArrayList<Vec4>();
+        ret.add( mBackground );
+        ret.add( mForeground );
+        ret.add( mRolloverBackground );
+        ret.add( mRolloverForeground );
+        ret.add( mPressedBackground  );
+        ret.add( mPressedForeground  );
+        ret.add( mSelectedBackground );
+        ret.add( mSelectedForeground );
+        ret.add( mDisabledBackground );
+        ret.add( mDisabledForeground );
+        return ret;
     }
 
 

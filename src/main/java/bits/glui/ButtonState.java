@@ -1,6 +1,6 @@
 package bits.glui;
 
-enum ButtonState {
+public enum ButtonState {
     NORMAL,
     NORMAL_SELECTED,
     MOUSEOVER,
