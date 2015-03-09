@@ -87,12 +87,12 @@ public class GToggleButton extends GButton implements GSelectable {
             background = mPalette.mPressedBackground;
             offX = 1;
             offY = -1;
-        } else if( mAction.isSelected() ) {
-            foreground = mPalette.mSelectedForeground;
-            background = mPalette.mSelectedBackground;
         } else if( isMouseOver() ) {
             foreground = mPalette.mRolloverForeground;
             background = mPalette.mRolloverBackground;
+        } else if( mAction.isSelected() ) {
+            foreground = mPalette.mSelectedForeground;
+            background = mPalette.mSelectedBackground;
         } else {
             foreground = mWorkFore;
             background = mWorkBack;
