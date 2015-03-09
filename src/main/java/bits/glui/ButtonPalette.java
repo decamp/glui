@@ -3,6 +3,7 @@ package bits.glui;
 import bits.math3d.Vec;
 import bits.math3d.Vec4;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,6 +12,7 @@ public class ButtonPalette {
 
     public static final ButtonPalette DEFAULT = new ButtonPalette();
 
+    public       Font mFont               = null;
     public final Vec4 mBackground         = new Vec4();
     public final Vec4 mForeground         = new Vec4();
     public final Vec4 mRolloverBackground = new Vec4();
@@ -24,6 +26,21 @@ public class ButtonPalette {
 
 
     public ButtonPalette() {}
+
+
+    public ButtonPalette( ButtonPalette copy ) {
+        mFont = copy.mFont;
+        Vec.put( copy.mBackground        , mBackground         );
+        Vec.put( copy.mForeground        , mForeground         );
+        Vec.put( copy.mRolloverBackground, mRolloverBackground );
+        Vec.put( copy.mRolloverForeground, mRolloverForeground );
+        Vec.put( copy.mPressedBackground , mPressedBackground  );
+        Vec.put( copy.mPressedForeground , mPressedForeground  );
+        Vec.put( copy.mSelectedBackground, mSelectedBackground );
+        Vec.put( copy.mSelectedForeground, mSelectedForeground );
+        Vec.put( copy.mDisabledBackground, mDisabledBackground );
+        Vec.put( copy.mDisabledForeground, mDisabledForeground );
+    }
 
 
     public List<Vec4> listColors() {

@@ -71,6 +71,7 @@ public class GButton extends GLabel {
 
     public void setButtonPalette( ButtonPalette bp ) {
         mPalette = bp;
+        setFont( bp.mFont );
         setForeground( bp.mForeground );
         setBackground( bp.mBackground );
     }
