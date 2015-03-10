@@ -128,6 +128,11 @@ public class GPanel implements GComponent {
     }
 
     @Override
+    public synchronized Rect getBounds() {
+        return new Rect( mX, mY, mX + mW, mY + mH );
+    }
+
+    @Override
     public void getAbsoluteBounds( Rect out ) {
         synchronized( this ) {
             if( mHasAbsoluteBounds ) {

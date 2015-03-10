@@ -32,6 +32,7 @@ public interface GComponent {
     public void clearChildren();
 
     public void getBounds( Rect out );
+    public Rect getBounds();
     /**
      * Retrieves the absolute bounds of a component, or the bounds within the frame.
      * If the component is not installed, it's relative bounds will be reported is its absolute bounds.
