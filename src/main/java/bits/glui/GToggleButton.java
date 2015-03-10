@@ -10,8 +10,6 @@ public class GToggleButton extends GButton implements GSelectable {
     private final GSelectGroup  mGroup;
     private final GToggleAction mAction;
 
-    private ButtonPalette mPalette;
-
     private boolean mRollover = false;
     private boolean mPressed  = false;
     private boolean mArmed    = false;
@@ -34,7 +32,6 @@ public class GToggleButton extends GButton implements GSelectable {
 
     public GToggleButton( GToggleAction action, GSelectGroup group ) {
         super( action );
-        mPalette = ButtonPalette.DEFAULT;
         mGroup   = group;
         mAction  = action;
         if( group != null ) {
@@ -78,21 +75,22 @@ public class GToggleButton extends GButton implements GSelectable {
         Vec4 background;
         int offX = 0;
         int offY = 0;
+        ButtonPalette p = getButtonPalette();
 
         if( !isEnabled() || !mAction.isEnabled() ) {
-            foreground = mPalette.mDisabledForeground;
-            background = mPalette.mDisabledBackground;
+            foreground = p.mDisabledForeground;
+            background = p.mDisabledBackground;
         } else if( isDepressed() ) {
-            foreground = mPalette.mPressedForeground;
-            background = mPalette.mPressedBackground;
+            foreground = p.mPressedForeground;
+            background = p.mPressedBackground;
             offX = 1;
             offY = -1;
         } else if( isMouseOver() ) {
-            foreground = mPalette.mRolloverForeground;
-            background = mPalette.mRolloverBackground;
+            foreground = p.mRolloverForeground;
+            background = p.mRolloverBackground;
         } else if( mAction.isSelected() ) {
-            foreground = mPalette.mSelectedForeground;
-            background = mPalette.mSelectedBackground;
+            foreground = p.mSelectedForeground;
+            background = p.mSelectedBackground;
         } else {
             foreground = mWorkFore;
             background = mWorkBack;

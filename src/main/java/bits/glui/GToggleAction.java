@@ -15,6 +15,7 @@ import javax.swing.Icon;
  */
 public class GToggleAction extends AbstractAction implements GSelectable {
 
+
     public GToggleAction( boolean selected ) {
         super();
         putValue( SELECTED_KEY, selected );
@@ -45,9 +46,9 @@ public class GToggleAction extends AbstractAction implements GSelectable {
 
 
     public void setSelected( boolean selected ) {
-        if( selected == isSelected() )
+        if( selected == isSelected() ) {
             return;
-
+        }
         putValue( SELECTED_KEY, selected );
     }
 
