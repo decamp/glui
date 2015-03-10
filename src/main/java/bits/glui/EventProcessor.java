@@ -825,7 +825,6 @@ class EventProcessor implements GHumanInputController {
                 mClickFocusY = Integer.MIN_VALUE;
             }
 
-
             GComponent prev = mMouseLocation;
             GComponent focus = null;
             Rect bounds = mWorkRect;
@@ -835,7 +834,9 @@ class EventProcessor implements GHumanInputController {
                 int relx = x - bounds.x0;
                 int rely = y - bounds.y0;
                 focus = prev.mouseFocusableComponentAt( relx, rely );
-            } else {
+            }
+
+            if( focus == null ) {
                 GComponent comp = mRoot;
                 comp.getAbsoluteBounds( bounds );
                 int relx = x - bounds.x0;
