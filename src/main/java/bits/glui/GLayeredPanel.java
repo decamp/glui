@@ -110,7 +110,7 @@ public class GLayeredPanel extends GPanel {
             }
         }
 
-        return topLayer == null && GToolkit.isMouseFocusable( this ) ? this : null;
+        return GToolkit.isMouseFocusable( this ) ? this : null;
     }
 
 }

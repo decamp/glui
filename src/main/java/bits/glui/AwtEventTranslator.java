@@ -59,7 +59,10 @@ class AwtEventTranslator implements MouseListener, MouseMotionListener, MouseWhe
 
 
     public void mouseEntered( MouseEvent e ) {
-        if( mCont.mouseEntered( e.getWhen() * 1000L, modsFor( e ), e.getX(), e.getY() ) ) {
+        if( mCont.mouseEntered( e.getWhen() * 1000L,
+                                modsFor( e ),
+                                e.getX(),
+                                mSource.getHeight() - e.getY() ) ) {
             e.consume();
         }
     }
@@ -74,9 +77,9 @@ class AwtEventTranslator implements MouseListener, MouseMotionListener, MouseWhe
 
     public void mouseMoved( MouseEvent e ) {
         if( mCont.mouseMoved( e.getWhen() * 1000L,
-                                   modsFor( e ),
-                                   e.getX(),
-                                   mSource.getHeight() - 1 - e.getY() ) )
+                              modsFor( e ),
+                              e.getX(),
+                              mSource.getHeight() - e.getY() ) )
         {
             e.consume();
         }
@@ -85,9 +88,9 @@ class AwtEventTranslator implements MouseListener, MouseMotionListener, MouseWhe
 
     public void mouseDragged( MouseEvent e ) {
         if( mCont.mouseMoved( e.getWhen() * 1000L,
-                                   modsFor( e ),
-                                   e.getX(),
-                                   mSource.getHeight() - 1 - e.getY() ) )
+                              modsFor( e ),
+                              e.getX(),
+                              mSource.getHeight() - e.getY() ) )
         {
             e.consume();
         }
