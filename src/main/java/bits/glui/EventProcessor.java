@@ -139,9 +139,11 @@ class EventProcessor implements GHumanInputController {
 
     public void processPropertyChange( GComponent source, String prop, Object oldValue, Object newValue ) {
         if( prop == GComponent.PROP_DISPLAYED || prop == GComponent.PROP_ENABLED ) {
+            mRoot.treeValidateHasMouseFocusable();
             mFocusMan.validate( source );
             mMouseCont.validate();
         } else if( prop == GComponent.PROP_HAS_MOUSE_LISTENER ) {
+            mRoot.treeValidateHasMouseFocusable();
             mMouseCont.validate();
         } else if( prop == GComponent.PROP_HAS_KEY_LISTENER ) {
             mFocusMan.validate( source );
@@ -690,7 +692,7 @@ class EventProcessor implements GHumanInputController {
 
         public boolean mouseMoved( int x, int y ) {
             long micros = System.currentTimeMillis() * 1000L;
-            updatePosition( x, y, micros );
+            updatePosition( x, y, micros, false );
 
             GComponent source = mButtonFocus;
             if( source == null ) {
@@ -710,7 +712,7 @@ class EventProcessor implements GHumanInputController {
         public boolean mouseMoved( long micros, int mods, int x, int y ) {
             mMods.setAll( mods );
 
-            updatePosition( x, y, micros );
+            updatePosition( x, y, micros, false );
             GComponent source = mButtonFocus;
             if( source == null ) {
                 source = mMouseLocation;
@@ -760,7 +762,7 @@ class EventProcessor implements GHumanInputController {
          * by {@code setRoot()}.
          */
         public void validate() {
-            GComponent root = mRoot;
+            GComponent root  = mRoot;
             GComponent focus = mButtonFocus;
 
             if( focus != null && (!GToolkit.isMouseFocusable( focus ) || !GToolkit.isChild( root, focus )) ) {
@@ -771,7 +773,7 @@ class EventProcessor implements GHumanInputController {
             }
 
             long micros = System.currentTimeMillis() * 1000L;
-            updatePosition( mMouseX, mMouseY, micros );
+            updatePosition( mMouseX, mMouseY, micros, true );
         }
 
         /**
@@ -816,7 +818,7 @@ class EventProcessor implements GHumanInputController {
         }
 
 
-        private void updatePosition( int x, int y, long micros ) {
+        private void updatePosition( int x, int y, long micros, boolean fullCheck ) {
             if( x != mMouseX || y != mMouseY ) {
                 mMouseX = x;
                 mMouseY = y;
@@ -829,7 +831,7 @@ class EventProcessor implements GHumanInputController {
             GComponent focus = null;
             Rect bounds = mWorkRect;
 
-            if( prev != null ) {
+            if( !fullCheck && prev != null ) {
                 prev.getAbsoluteBounds( bounds );
                 int relx = x - bounds.x0;
                 int rely = y - bounds.y0;

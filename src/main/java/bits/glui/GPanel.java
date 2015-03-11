@@ -17,6 +17,10 @@ import bits.math3d.Vec;
 import bits.math3d.Vec4;
 
 /**
+ * TODO: fix potential threading issue with adding/removing children.
+ * Even mSafeChildren will give up a concurrent modification exception
+ * if iterated during add/remove event.
+ *
  * @author decamp
  */
 public class GPanel implements GComponent {
@@ -44,13 +48,13 @@ public class GPanel implements GComponent {
     private final Vec4    mBackground    = new Vec4( 0, 0, 0, 0 );
     private       Font    mFont          = DEFAULT_FONT;
 
-    private boolean mDisplayed = false;
-    private boolean mVisible   = true;
-    private boolean mEnabled   = true;
-    private boolean mHasFocus  = false;
-
-    private boolean mNeedsPaint  = false;
-    private boolean mNeedsLayout = false;
+    private boolean mDisplayed            = false;
+    private boolean mVisible              = true;
+    private boolean mEnabled              = true;
+    private boolean mHasFocus             = false;
+    private boolean mTreeIsMouseFocusable = false;
+    private boolean mNeedsPaint           = false;
+    private boolean mNeedsLayout          = false;
 
     private GComponentListener   mComponentCaster   = null;
     private GAncestorListener    mAncestorCaster    = null;
@@ -200,12 +204,12 @@ public class GPanel implements GComponent {
     
     @Override
     public GComponent setPosition( int x, int y ) {
-        return bounds( x, y, width(), height() );
+        return setBounds( x, y, width(), height() );
     }
     
     @Override
     public GComponent setSize( int w, int h ) {
-        return bounds( x(), y(), w, h );
+        return setBounds( x(), y(), w, h );
     }
     
     @Override
@@ -462,8 +466,7 @@ public class GPanel implements GComponent {
     public synchronized void removePaintListener( GPaintListener listener ) {
         mPaintCaster = GluiMulticaster.remove( mPaintCaster, listener );
     }
-    
-    
+
     @Override
     public synchronized boolean hasKeyListener() {
         return mKeyCaster != null;
@@ -564,7 +567,7 @@ public class GPanel implements GComponent {
     
     @Override
     public synchronized GComponent mouseFocusableComponentAt( int x, int y ) {
-        if( !mDisplayed || !contains( x, y ) ) {
+        if( !mTreeIsMouseFocusable || !contains( x, y ) ) {
             return null;
         }
         
@@ -579,7 +582,12 @@ public class GPanel implements GComponent {
         
         return GToolkit.isMouseFocusable( this ) ? this : null;
     }
-    
+
+    @Override
+    public boolean hasMouseFocusableComponent() {
+        return mTreeIsMouseFocusable;
+    }
+
     @Override
     public synchronized void applyLayout() {
         if( mNeedsLayout || mLayout == null && mChildren.isEmpty() ) {
@@ -616,8 +624,7 @@ public class GPanel implements GComponent {
     public GDispatcher dispatcher() {
         return mDispatcher;
     }
-    
-    
+
     @Override
     public synchronized void treeProcessParentChanged( GDispatcher dispatcher, GComponent parent ) {
         if( dispatcher == mDispatcher && parent == mParent ) {
@@ -714,8 +721,16 @@ public class GPanel implements GComponent {
             }
         }
     }
-    
-    
+
+    @Override
+    public synchronized void treeValidateHasMouseFocusable() {
+        mTreeIsMouseFocusable = GToolkit.isMouseFocusable( this );
+        for( GComponent c: mChildren ) {
+            c.treeValidateHasMouseFocusable();
+            mTreeIsMouseFocusable = mTreeIsMouseFocusable || c.hasMouseFocusableComponent();
+        }
+    }
+
     @Override
     public void treeProcessLayout() {
         GLayout m;
@@ -735,9 +750,12 @@ public class GPanel implements GComponent {
             }
         }
     }
-    
+
+
+
+
     @Override
-    public void processPaint( DrawEnv g ) {
+    public synchronized void processPaint( DrawEnv g ) {
         if( !mDisplayed ) {
             return;
         }
@@ -892,6 +910,7 @@ public class GPanel implements GComponent {
     }
 
 
+
     protected void paintComponent( DrawEnv g ) {
         GPaintListener c = mPaintCaster;
         if( c != null ) {
@@ -956,8 +975,10 @@ public class GPanel implements GComponent {
         if( mDisplayed == displayed ) {
             return false;
         }
-        
+
         mDisplayed = displayed;
+        mTreeIsMouseFocusable &= displayed;
+
         if( out != null ) {
             if( mComponentCaster != null ) {
                 int id = displayed ? GComponentEvent.COMPONENT_SHOWN : GComponentEvent.COMPONENT_HIDDEN;

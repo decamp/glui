@@ -80,6 +80,37 @@ public class GLayeredPanel extends GPanel {
         mChildren.clear();
         mLayers.clear();
     }
-    
+
+    @Override
+    public synchronized GComponent mouseFocusableComponentAt( int x, int y ) {
+        if( !hasMouseFocusableComponent() || !contains( x, y ) ) {
+            return null;
+        }
+
+        int size = mChildren.size();
+        Integer topLayer = null;
+
+        while( size-- > 0 ) {
+            GComponent child = mChildren.get( size );
+            Integer    layer = mLayers.get( size );
+
+            if( topLayer == null ) {
+                if( child.hasMouseFocusableComponent() ) {
+                    topLayer = layer;
+                } else {
+                    continue;
+                }
+            } else if( layer.intValue() != topLayer.intValue() ) {
+                break;
+            }
+
+            GComponent ret = child.mouseFocusableComponentAt( x - child.x(), y - child.y() );
+            if( ret != null ) {
+                return ret;
+            }
+        }
+
+        return topLayer == null && GToolkit.isMouseFocusable( this ) ? this : null;
+    }
 
 }

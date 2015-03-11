@@ -148,7 +148,7 @@ public class GTextField extends GPanel {
 
                     mText.append( c );
                     mDrawText = mText.toString();
-                }else if( c == 8 ) {
+                } else if( c == 8 ) {
                     mText.setLength( Math.max( 0, mText.length() - 1 ) );
                     mDrawText = mText.toString();
                 }

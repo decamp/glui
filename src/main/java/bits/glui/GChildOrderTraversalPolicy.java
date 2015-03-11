@@ -46,7 +46,6 @@ public class GChildOrderTraversalPolicy implements GFocusTraversalPolicy {
 
 
     public GComponent getComponentAfter( GComponent root, GComponent comp ) {
-
         // Check children.
         for( GComponent c : comp.children() ) {
             GComponent ret = getFirstComponent( c );
@@ -56,17 +55,17 @@ public class GChildOrderTraversalPolicy implements GFocusTraversalPolicy {
         }
 
         // Check if possible to get parent.
-        if( comp == root )
+        if( comp == root ) {
             return GToolkit.isKeyboardFocusable( root ) ? root : null;
-
+        }
         GComponent parent = comp.parent();
-        if( parent == null )
+        if( parent == null ) {
             return null;
-
+        }
         GComponent ret = getComponentAfter( root, parent, comp );
-        if( ret != null )
+        if( ret != null ) {
             return ret;
-
+        }
         // Nothing in the remaining components. Sweep through from the
         // beginning.
         return getFirstComponent( root );
@@ -74,16 +73,16 @@ public class GChildOrderTraversalPolicy implements GFocusTraversalPolicy {
 
 
     public GComponent getComponentBefore( GComponent root, GComponent comp ) {
-
         // Check if possible to get parent.
         if( comp != root ) {
             GComponent parent = comp.parent();
-            if( parent == null )
+            if( parent == null ) {
                 return null;
-
+            }
             GComponent ret = getComponentBefore( root, parent, comp );
-            if( ret != null )
+            if( ret != null ) {
                 return ret;
+            }
         }
 
         // Nope. Sweep through from the end.
@@ -115,12 +114,14 @@ public class GChildOrderTraversalPolicy implements GFocusTraversalPolicy {
             }
 
             // Nope. Move to parent.
-            if( comp == root )
+            if( comp == root ) {
                 return null;
+            }
 
             GComponent parent = comp.parent();
-            if( parent == null )
+            if( parent == null ) {
                 return null;
+            }
 
             start = comp;
             comp = parent;
@@ -152,16 +153,19 @@ public class GChildOrderTraversalPolicy implements GFocusTraversalPolicy {
             }
 
             // Nope. Check node itself.
-            if( GToolkit.isKeyboardFocusable( comp ) )
+            if( GToolkit.isKeyboardFocusable( comp ) ) {
                 return comp;
+            }
 
             // Nope. Move to parent.
-            if( comp == root )
+            if( comp == root ) {
                 return null;
+            }
 
             GComponent parent = comp.parent();
-            if( parent == null )
+            if( parent == null ) {
                 return null;
+            }
 
             start = comp;
             comp = parent;

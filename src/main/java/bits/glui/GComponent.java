@@ -137,6 +137,7 @@ public interface GComponent {
     public GComponent componentAt( int x, int y );
     public GComponent displayedComponentAt( int x, int y );
     public GComponent mouseFocusableComponentAt( int x, int y );
+    public boolean hasMouseFocusableComponent();
     
     public void repaint();
     public boolean needsRepaint();
@@ -151,7 +152,8 @@ public interface GComponent {
     public void treeProcessAncestorResized( GComponent source );
     public void treeProcessParentShown();
     public void treeProcessParentHidden();
-    
+    public void treeValidateHasMouseFocusable(); // Called to check if any subtree members can hold mouse focus.
+
     /**
      * Methods that should only be called by dispatcher.
      */
