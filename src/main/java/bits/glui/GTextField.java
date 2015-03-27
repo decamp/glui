@@ -77,11 +77,11 @@ public class GTextField extends GPanel {
     }
 
     @Override
-    public void paintComponent( DrawEnv g ) {
-        final DrawStream s = g.drawStream();
+    public void paintComponent( DrawEnv d ) {
+        final DrawStream s = d.drawStream();
         final int w = width();
         final int h = height();
-        final Vec4 v = g.mWorkVec4;
+        final Vec4 v = d.mWorkVec4;
 
         s.config( true, false, false );
         if( getBackground( v ) ) {
@@ -96,11 +96,11 @@ public class GTextField extends GPanel {
 
         getForeground( v );
         s.color( v );
-        FontTexture font = g.fontManager().getFontTexture( getFont(), GLContext.getCurrent() );
+        FontTexture font = d.fontManager().getFontTexture( getFont(), GLContext.getCurrent() );
 
         float yy = Math.round( 0.5f * ( h - font.getAscent() + font.getDescent() ) );
-        font.bind( g );
-        font.renderChars( g, Math.round( font.getHeight() * 0.2f ), yy, 0, mDrawText );
+        font.beginRenderChars( d );
+        font.renderChars( d, Math.round( font.getHeight() * 0.2f ), yy, 0, mDrawText );
 
         int tw;
         if( mDrawText.length() >= mMaxLength ) {
@@ -109,7 +109,7 @@ public class GTextField extends GPanel {
             tw = (int)font.getCharsWidth( mDrawText );
         }
 
-        font.unbind( g );
+        font.endRenderChars( d );
         s.config( true, false, false );
         getForeground( v );
 
@@ -124,7 +124,7 @@ public class GTextField extends GPanel {
         }
 
         s.color( v );
-        g.mLineWidth.apply( 1f );
+        d.mLineWidth.apply( 1f );
         s.beginLineLoop();
         s.vert( 1, 1 );
         s.vert( w - 1, 1 );

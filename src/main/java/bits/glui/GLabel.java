@@ -117,9 +117,9 @@ public class GLabel extends GPanel {
         s.color( foreground );
         float x = Math.round( w * mHorDst - mLabelX )  + offX;
         float y = Math.round( h * mVertDst - mLabelY ) + offY;
-        font.bind( d );
+        font.beginRenderChars( d );
         font.renderChars( d, x, y, 0, text );
-        font.unbind( d );
+        font.endRenderChars( d );
     }
 
 }

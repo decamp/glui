@@ -85,10 +85,10 @@ public class GCheckBox extends GButton implements GSelectable {
         }
 
         FontTexture font = g.fontManager().getFontTexture( getFont(), GLContext.getCurrent() );
-        font.bind( g );
+        font.beginRenderChars( g );
         float yy = Math.round( ( h - ( font.getAscent() - font.getDescent() ) ) * 0.5f );
         font.renderChars( g, h, yy, 0, text() );
-        font.unbind( g );
+        font.endRenderChars( g );
     }
 
 
