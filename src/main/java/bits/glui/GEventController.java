@@ -72,39 +72,39 @@ public final class GEventController {
     }
 
 
-    public void processPaint( DrawEnv g ) {
+    public void processPaint( DrawEnv d ) {
         Rect bounds   = new Rect();
         mRoot.getAbsoluteBounds( bounds );
-        Rect viewport = g.mContextViewport;
+        Rect viewport = d.mContextViewport;
 
-        Mat.identity( g.mProj.get() );
-        g.mView.setOrtho( 0, bounds.width(), 0, bounds.height(), -1, 1 );
+        Mat.identity( d.mProj.get() );
+        d.mView.setOrtho( 0, bounds.width(), 0, bounds.height(), -1, 1 );
 
-        g.mDepthTest.push();
-        g.mDepthTest.apply( false, GL_LESS );
-        g.mStencilTest.push();
-        g.mStencilTest.apply( false );
-        g.mBlend.push();
-        g.mBlend.apply( true, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
+        d.mDepthTest.push();
+        d.mDepthTest.apply( false, GL_LESS );
+        d.mStencilTest.push();
+        d.mStencilTest.apply( false );
+        d.mBlend.push();
+        d.mBlend.apply( true, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
 
         int xx = bounds.x() - viewport.x();
         int yy = bounds.y() - viewport.y();
         int ww = bounds.width();
         int hh = bounds.height();
 
-        g.mScissorTest.push();
-        g.mScissorTest.apply( true, xx, yy, ww, hh );
-        g.mViewport.push();
-        g.mViewport.apply( xx, yy, ww, hh );
+        d.mScissorTest.push();
+        d.mScissorTest.apply( true, xx, yy, ww, hh );
+        d.mViewport.push();
+        d.mViewport.apply( xx, yy, ww, hh );
 
         try {
-            mRoot.processPaint( g );
+            mRoot.processPaint( d );
         } finally {
-            g.mViewport.pop();
-            g.mScissorTest.pop();
-            g.mBlend.pop();
-            g.mStencilTest.pop();
-            g.mDepthTest.pop();
+            d.mViewport.pop();
+            d.mScissorTest.pop();
+            d.mBlend.pop();
+            d.mStencilTest.pop();
+            d.mDepthTest.pop();
         }
     }
 

@@ -16,7 +16,7 @@ import bits.draw3d.text.FontManager;
 import bits.draw3d.util.Animator;
 import bits.draw3d.util.LimitAnimator;
 
-import static javax.media.opengl.GL.*;
+import static javax.media.opengl.GL2GL3.*;
 
 
 /**
@@ -204,6 +204,7 @@ public final class GRootController {
 
     public void generateUpdates( GLAutoDrawable gld, Rect optContextViewport ) {
         mDrawEnv.init( gld, optContextViewport );
+        mDrawEnv.checkErr();
         mInit.push( mDrawEnv );
         mCont.processAll( mDrawEnv );
         mInit.pop( mDrawEnv );
@@ -217,7 +218,7 @@ public final class GRootController {
 
         private       int     mClearBits  = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT;
         private final float[] mClearColor = { 0, 0, 0, 1 };
-        private       int     mDrawBuffer = GL_BACK;
+        private       int     mDrawBuffer = GL_BACK_LEFT;
 
         private int     mDoubleBuffered = 0; //-1 false, 0 unknown, 1 true
         private boolean mAutoFlush      = true;
@@ -332,7 +333,7 @@ public final class GRootController {
 
 
         public void push( DrawEnv g ) {
-            g.mGl.glDrawBuffer( mDrawBuffer );
+//            g.mGl.glDrawBuffer( mDrawBuffer );
             if( mClearBits != 0 ) {
                 g.mGl.glClearColor( mClearColor[0], mClearColor[1], mClearColor[2], mClearColor[3] );
                 g.mGl.glClear( mClearBits );
