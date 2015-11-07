@@ -8,9 +8,6 @@ package bits.glui;
 
 import java.util.*;
 
-import bits.glui.GSelectable;
-
-
 /**
  * Similar to javax.swing.ButtonGroup. Enforces a mutually exclusive
  * selection on a group of items. That is, if you have a group of N

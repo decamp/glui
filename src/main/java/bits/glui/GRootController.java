@@ -8,15 +8,15 @@ package bits.glui;
 
 
 import java.awt.Component;
-import javax.media.opengl.*;
-import javax.media.opengl.awt.GLCanvas;
+import com.jogamp.opengl.*;
+import com.jogamp.opengl.awt.GLCanvas;
 
 import bits.draw3d.*;
 import bits.draw3d.text.FontManager;
 import bits.draw3d.util.Animator;
 import bits.draw3d.util.LimitAnimator;
 
-import static javax.media.opengl.GL2GL3.*;
+import static com.jogamp.opengl.GL2GL3.*;
 
 
 /**

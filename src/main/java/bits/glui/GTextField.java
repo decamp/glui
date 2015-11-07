@@ -6,7 +6,7 @@
 
 package bits.glui;
 
-import javax.media.opengl.*;
+import com.jogamp.opengl.*;
 
 import bits.draw3d.DrawEnv;
 import bits.draw3d.DrawStream;

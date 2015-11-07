@@ -10,7 +10,7 @@ import bits.draw3d.DrawEnv;
 import bits.draw3d.Rect;
 import bits.math3d.Mat;
 import java.awt.*;
-import static javax.media.opengl.GL.*;
+import static com.jogamp.opengl.GL.*;
 
 
 /**
